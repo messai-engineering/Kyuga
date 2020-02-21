@@ -1,14 +1,11 @@
 package com.twelfthmile.kyuga.utils
 
-import com.twelfthmile.kyuga.expectations.MultDate
-import com.twelfthmile.kyuga.expectations.formatDateByFormat
-import com.twelfthmile.kyuga.expectations.formatForEnglishLocale
-import com.twelfthmile.kyuga.expectations.getMaxDateYear
+import com.twelfthmile.kyuga.expectations.*
 
 class FsaContextMap {
 
     //todo change to private
-    private val map: MutableMap<String, String> = mutableMapOf()
+    private var map: MutableMap<String, String> = mutableMapOf()
     private val valMap = mutableMapOf<String, String>()
     private var prevKey: String? = null
     private var keys: MutableList<String?> = mutableListOf()
@@ -151,7 +148,10 @@ class FsaContextMap {
     }
 
     fun putAll(fsaContextMap: FsaContextMap) {
-        map.putAll(fsaContextMap.map)
+//        map.putAll(fsaContextMap.map)
+        fsaContextMap.map.forEach {
+           map[it.key] = it.value
+        }
     }
 
     fun getDate(config: Map<String, String>): MultDate? {

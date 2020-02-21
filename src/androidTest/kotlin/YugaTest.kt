@@ -14,8 +14,14 @@ class YugaTest {
                 mapOf(
                     KYugaConstants.YUGA_CONF_DATE to "2018-01-01 00:00:00"
                 ))
-            assertEquals(jsons.getJSONObject(it).getJSONObject("response").getString("str"), response?.str)
+            assertEquals(jsons.getJSONObject(it).getJSONObject("response").getString("str"), response?.dateStr)
         }
+    }
+
+    @Test
+    fun `on parse - simple date - should pass`() {
+        val response = Kyuga.parse("09:40 PM May 21, 2017")
+        println(response?.dateStr)
     }
 
     private fun getTestResources(): JSONArray {

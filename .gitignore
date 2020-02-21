@@ -1,3 +1,6 @@
 .gradle
 .idea/
 build/
+.DS_Store
+KyugaTest/KyugaTest.xcodeproj/project.xcworkspace/xcuserdata/
+KyugaTest/KyugaTest.xcodeproj/xcuserdata/

@@ -181,7 +181,7 @@ object Kyuga {
     }
 
     private fun generateDefaultConfig(): Map<String, String> {
-        val config = HashMap<String, String>()
+        val config = mutableMapOf<String, String>()
         config[KYugaConstants.YUGA_CONF_DATE] = formatDateDefault(MultDate())
         return config
     }

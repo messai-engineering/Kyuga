@@ -17,7 +17,7 @@ kotlin {
 
         fromPreset(iOSTarget, 'ios') {
             binaries {
-                framework('MultiCore')
+                framework('KyugaIOS')
             }
         }
 
@@ -61,7 +61,7 @@ configurations {
 task packForXcode(type: Sync) {
     final File frameworkDir = new File(buildDir, "xcode-frameworks")
     final String mode = project.findProperty("XCODE_CONFIGURATION")?.toUpperCase() ?: 'DEBUG'
-    final def framework = kotlin.targets.ios.binaries.getFramework("MultiCore", mode)
+    final def framework = kotlin.targets.ios.binaries.getFramework("KyugaIOS", mode)
 
     inputs.property "mode", mode
     dependsOn framework.linkTask
