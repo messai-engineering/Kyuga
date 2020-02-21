@@ -1,0 +1,94 @@
+plugins {
+    id 'org.jetbrains.kotlin.multiplatform' version '1.3.41'
+}
+repositories {
+    mavenCentral()
+}
+group 'com.kyuga'
+version '0.0.1'
+
+apply plugin: 'maven-publish'
+
+kotlin {
+
+    targets {
+        final def iOSTarget = System.getenv('SDK_NAME')?.startsWith("iphoneos") \
+                              ? presets.iosArm64 : presets.iosX64
+
+        fromPreset(iOSTarget, 'ios') {
+            binaries {
+                framework('MultiCore')
+            }
+        }
+
+        fromPreset(presets.jvm, 'android')
+    }
+
+    sourceSets {
+        commonMain.dependencies {
+            implementation 'org.jetbrains.kotlin:kotlin-stdlib-common'
+        }
+
+        androidMain.dependencies {
+            implementation 'org.jetbrains.kotlin:kotlin-stdlib'
+        }
+
+        androidTest {
+            kotlin {
+                srcDir 'src/androidTest/kotlin'
+            }
+            dependencies {
+                implementation "org.jetbrains.kotlin:kotlin-test-common"
+                implementation "org.jetbrains.kotlin:kotlin-test-annotations-common"
+                implementation "org.jetbrains.kotlin:kotlin-test-junit"
+                implementation "org.jetbrains.kotlin:kotlin-test"
+                implementation "org.json:json:20090211"
+            }
+
+            dependsOn commonMain
+            dependsOn androidMain
+        }
+
+        iosMain.dependencies {
+        }
+    }
+}
+
+configurations {
+    compileClasspath
+}
+
+task packForXcode(type: Sync) {
+    final File frameworkDir = new File(buildDir, "xcode-frameworks")
+    final String mode = project.findProperty("XCODE_CONFIGURATION")?.toUpperCase() ?: 'DEBUG'
+    final def framework = kotlin.targets.ios.binaries.getFramework("MultiCore", mode)
+
+    inputs.property "mode", mode
+    dependsOn framework.linkTask
+
+    from { framework.outputFile.parentFile }
+    into frameworkDir
+
+    doLast {
+        new File(frameworkDir, 'gradlew').with {
+            text = "#!/bin/bash\nexport 'JAVA_HOME=${System.getProperty("java.home")}'\ncd '${rootProject.rootDir}'\n./gradlew \$@\n"
+            setExecutable(true)
+        }
+    }
+}
+
+task iosTest {
+    def device = project.findProperty("iosDevice")?.toString() ?: "iPhone 8"
+    dependsOn 'linkTestDebugExecutableIos'
+    group = JavaBasePlugin.VERIFICATION_GROUP
+    description = "Runs tests for target 'ios' on an iOS simulator"
+
+    doLast {
+        def binary = kotlin.targets.ios.binaries.getExecutable('test', 'DEBUG').outputFile
+        exec {
+            commandLine 'xcrun', 'simctl', 'spawn', device, binary.absolutePath
+        }
+    }
+}
+
+tasks.build.dependsOn packForXcode
