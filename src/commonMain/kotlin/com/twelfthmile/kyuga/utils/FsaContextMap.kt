@@ -1,6 +1,7 @@
 package com.twelfthmile.kyuga.utils
 
 import com.twelfthmile.kyuga.expectations.*
+import com.twelfthmile.kyuga.utils.*
 
 class FsaContextMap {
 
@@ -11,15 +12,15 @@ class FsaContextMap {
     private var keys: MutableList<String?> = mutableListOf()
 
     var type: String?
-        get() = map[KYugaConstants.TY_TYP]
+        get() = map[TY_TYP]
         set(type) {
-            type?.let {  map[KYugaConstants.TY_TYP] = it }
+            type?.let {  map[TY_TYP] = it }
         }
 
     var index: Int?
-        get() = map[KYugaConstants.INDEX]?.toInt()
+        get() = map[INDEX]?.toInt()
         set(index) {
-            map[KYugaConstants.INDEX] = index.toString()
+            map[INDEX] = index.toString()
         }
 
     operator fun contains(key: String): Boolean {
@@ -53,7 +54,7 @@ class FsaContextMap {
     }
 
     fun setType(type: String, convertType: String?) {
-        map[KYugaConstants.TY_TYP] = type
+        map[TY_TYP] = type
         if (convertType != null)
             convert(convertType)
     }
@@ -113,25 +114,25 @@ class FsaContextMap {
     //upgrade for eg from yy to yyy
     fun upgrade(value: Char) {
         when (prevKey) {
-            KYugaConstants.DT_HH -> {
-                put(KYugaConstants.DT_mm, value)
-                prevKey = KYugaConstants.DT_mm
+            DT_HH -> {
+                put(DT_mm, value)
+                prevKey = DT_mm
             }
-            KYugaConstants.DT_mm -> {
-                put(KYugaConstants.DT_ss, value)
-                prevKey = KYugaConstants.DT_ss
+            DT_mm -> {
+                put(DT_ss, value)
+                prevKey = DT_ss
             }
-            KYugaConstants.DT_D -> {
-                put(KYugaConstants.DT_MM, value)
-                prevKey = KYugaConstants.DT_MM
+            DT_D -> {
+                put(DT_MM, value)
+                prevKey = DT_MM
             }
-            KYugaConstants.DT_MM, KYugaConstants.DT_MMM -> {
-                put(KYugaConstants.DT_YY, value)
-                prevKey = KYugaConstants.DT_YY
+            DT_MM, DT_MMM -> {
+                put(DT_YY, value)
+                prevKey = DT_YY
             }
-            KYugaConstants.DT_YY -> {
-                put(KYugaConstants.DT_YYYY, map.remove(KYugaConstants.DT_YY) + value)
-                prevKey = KYugaConstants.DT_YYYY
+            DT_YY -> {
+                put(DT_YYYY, map.remove(DT_YY) + value)
+                prevKey = DT_YYYY
             }
         }
     }
@@ -170,56 +171,56 @@ class FsaContextMap {
                     sbf.append(key).append(" ")
                     sbs.append(value).append(" ")
                     when (key) {
-                        KYugaConstants.DT_YY, KYugaConstants.DT_YYYY -> ifYear = true
-                        KYugaConstants.DT_D -> ifDay = true
-                        KYugaConstants.DT_MM, KYugaConstants.DT_MMM -> ifMonth = true
+                        DT_YY, DT_YYYY -> ifYear = true
+                        DT_D -> ifDay = true
+                        DT_MM, DT_MMM -> ifMonth = true
                     }
                 }
             }
             //date year defaulting
-            if (!ifYear && config.containsKey(KYugaConstants.YUGA_CONF_DATE)) {
+            if (!ifYear && config.containsKey(YUGA_CONF_DATE)) {
                 sbf.append("yyyy ")
-                config[KYugaConstants.YUGA_CONF_DATE]?.let {
+                config[YUGA_CONF_DATE]?.let {
                     sbs.append(it.split("-".toRegex()).dropLastWhile { dp -> dp.isEmpty() }.toTypedArray()[0])
                         .append(" ")//assuming yyyy-MM-dd HH:mm:ss format
                 }
             } else {
                 val maxDate = getMaxDateYear()
-                if (map.containsKey(KYugaConstants.DT_YY)) {
-                    val y = map[KYugaConstants.DT_YY]?.toInt()
+                if (map.containsKey(DT_YY)) {
+                    val y = map[DT_YY]?.toInt()
                     y?.let {
                         if (!(it > 0 && it < maxDate % 1000 + 3))
-                            invalidDateContributors.add(KYugaConstants.DT_YY)
+                            invalidDateContributors.add(DT_YY)
                     }
                 } else {
-                    val y = map[KYugaConstants.DT_YYYY]?.toInt()
+                    val y = map[DT_YYYY]?.toInt()
                     y?.let {
                         if (!(it > 1971 && it < maxDate + 3))
-                            invalidDateContributors.add(KYugaConstants.DT_YYYY)
+                            invalidDateContributors.add(DT_YYYY)
                     }
                 }
 
             }
 
-            if (!ifMonth && config.containsKey(KYugaConstants.YUGA_CONF_DATE)) {
+            if (!ifMonth && config.containsKey(YUGA_CONF_DATE)) {
                 sbf.append("MM ")
-                config[KYugaConstants.YUGA_CONF_DATE]?.let {
+                config[YUGA_CONF_DATE]?.let {
                     sbs.append(it.split("-".toRegex()).dropLastWhile { dp -> dp.isEmpty() }.toTypedArray()[1])
                         .append(" ")//assuming yyyy-MM-dd HH:mm:ss format
                 }
             } else {
-                if (map.containsKey(KYugaConstants.DT_MM)) {
-                    val m = map[KYugaConstants.DT_MM]?.toInt()
+                if (map.containsKey(DT_MM)) {
+                    val m = map[DT_MM]?.toInt()
                     m?.let {
                         if (it !in 0..12)
-                            invalidDateContributors.add(KYugaConstants.DT_MM)
+                            invalidDateContributors.add(DT_MM)
                     }
                 }
             }
 
-            if (!ifDay && config.containsKey(KYugaConstants.YUGA_CONF_DATE)) {
+            if (!ifDay && config.containsKey(YUGA_CONF_DATE)) {
                 sbf.append("dd ")
-                config[KYugaConstants.YUGA_CONF_DATE]?.let {
+                config[YUGA_CONF_DATE]?.let {
                     sbs.append(
                         it.split("-".toRegex()).dropLastWhile { dp -> dp.isEmpty() }.toTypedArray()[2].split(
                             " ".toRegex()
@@ -227,21 +228,21 @@ class FsaContextMap {
                     )
                 }?.append(" ")//assuming yyyy-MM-dd HH:mm:ss format
             } else {
-                if (map.containsKey(KYugaConstants.DT_D)) {
-                    map[KYugaConstants.DT_D]?.toInt()?.let {
+                if (map.containsKey(DT_D)) {
+                    map[DT_D]?.toInt()?.let {
                         if (it !in 0..31)
-                            invalidDateContributors.add(KYugaConstants.DT_D)
+                            invalidDateContributors.add(DT_D)
                     }
                 }
             }
 
             if (invalidDateContributors.size > 0) {
-                return if (invalidDateContributors.size == 1 && invalidDateContributors[0] == KYugaConstants.DT_MM && ifDay && ifYear) {
-                    val format = KYugaConstants.DT_D + "/" + KYugaConstants.DT_MM + "/" + if (map.containsKey(KYugaConstants.DT_YY)) KYugaConstants.DT_YY else KYugaConstants.DT_YYYY
-                    val value = map[KYugaConstants.DT_MM] + "/" + map[KYugaConstants.DT_D] + "/" + if (map.containsKey(
-                            KYugaConstants.DT_YY
+                return if (invalidDateContributors.size == 1 && invalidDateContributors[0] == DT_MM && ifDay && ifYear) {
+                    val format = DT_D + "/" + DT_MM + "/" + if (map.containsKey(DT_YY)) DT_YY else DT_YYYY
+                    val value = map[DT_MM] + "/" + map[DT_D] + "/" + if (map.containsKey(
+                            DT_YY
                         )
-                    ) map[KYugaConstants.DT_YY] else map[KYugaConstants.DT_YYYY]
+                    ) map[DT_YY] else map[DT_YYYY]
                     formatDateByFormat(value, format)
                 } else
                     null
@@ -255,7 +256,7 @@ class FsaContextMap {
     }
 
     private fun allow(key: String): Boolean {
-        return key == KYugaConstants.DT_D || key == KYugaConstants.DT_MM || key == KYugaConstants.DT_MMM || key == KYugaConstants.DT_YY || key == KYugaConstants.DT_YYYY || key == KYugaConstants.DT_HH || key == KYugaConstants.DT_mm || key == KYugaConstants.DT_ss
+        return key == DT_D || key == DT_MM || key == DT_MMM || key == DT_YY || key == DT_YYYY || key == DT_HH || key == DT_mm || key == DT_ss
     }
 
 }

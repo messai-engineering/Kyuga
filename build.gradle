@@ -1,13 +1,35 @@
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+        jcenter()
+        mavenLocal()
+        maven { url 'https://dl.bintray.com/kotlin/kotlin-dev' }
+        maven { url 'https://dl.bintray.com/kotlin/kotlin-eap' }
+        maven { url "https://dl.bintray.com/jetbrains/kotlin-native-dependencies" }
+    }
+    dependencies {
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        classpath "org.jetbrains.kotlin:kotlin-allopen:$kotlin_version"
+        classpath "org.jetbrains.kotlin:kotlin-frontend-plugin:0.0.37"
+        classpath group: 'net.rubygrapefruit', name: 'native-platform', version: '0.21'
+        classpath "com.jfrog.bintray.gradle:gradle-bintray-plugin:1.8.4-jetbrains-3"
+    }
+}
+
 plugins {
     id 'org.jetbrains.kotlin.multiplatform' version '1.3.41'
 }
+
+apply plugin: 'maven-publish'
+apply plugin: 'com.jfrog.bintray'
+
 repositories {
     mavenCentral()
 }
-group 'com.kyuga'
-version '0.0.1'
 
-apply plugin: 'maven-publish'
+group project.groupId
+version project.kyugaVersion
 
 kotlin {
 
@@ -25,12 +47,16 @@ kotlin {
     }
 
     sourceSets {
-        commonMain.dependencies {
-            implementation 'org.jetbrains.kotlin:kotlin-stdlib-common'
+        commonMain {
+            dependencies {
+                implementation(kotlin("stdlib-common"))
+            }
         }
 
-        androidMain.dependencies {
-            implementation 'org.jetbrains.kotlin:kotlin-stdlib'
+        androidMain {
+            dependencies {
+                implementation(kotlin("stdlib"))
+            }
         }
 
         androidTest {
@@ -77,18 +103,8 @@ task packForXcode(type: Sync) {
     }
 }
 
-task iosTest {
-    def device = project.findProperty("iosDevice")?.toString() ?: "iPhone 8"
-    dependsOn 'linkTestDebugExecutableIos'
-    group = JavaBasePlugin.VERIFICATION_GROUP
-    description = "Runs tests for target 'ios' on an iOS simulator"
-
-    doLast {
-        def binary = kotlin.targets.ios.binaries.getExecutable('test', 'DEBUG').outputFile
-        exec {
-            commandLine 'xcrun', 'simctl', 'spawn', device, binary.absolutePath
-        }
-    }
-}
+apply from: rootProject.file('pom.gradle')
+apply from: rootProject.file('gradle/bintray.gradle')
+apply from: rootProject.file('gradle/publish.gradle')
 
 tasks.build.dependsOn packForXcode
