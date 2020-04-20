@@ -9,7 +9,7 @@ Its the simplest API, just pass the text, we will return the Date object.
 
 ### Prerequisites
 
-None. You can call it from anything which runs Java.
+None :relaxed:
 
 
 ### Usage
@@ -27,6 +27,27 @@ val date: Date = response.getDate();
 
 Please read [CONTRIBUTING.md](https://gist.github.com/johnjoseph/b6aeea8ff859964ac325896bf9eeb2c7) for details on our code of conduct, and the process for submitting pull requests to us.
 
+## Releases
+
+* 0.0.1
+    * common
+      
+       [ ![Download](https://api.bintray.com/packages/messai/maven/kyuga/images/download.svg) ](https://bintray.com/messai/maven/kyuga/_latestVersion)
+      ```groovy
+      implementation "in.messai.kyuga:kyuga:0.0.1"
+      ```
+    * android
+    
+       [ ![Download](https://api.bintray.com/packages/messai/maven/kyuga/images/download.svg) ](https://bintray.com/messai/maven/kyuga/_latestVersion)
+      ```groovy
+      implementation "in.messai.kyuga:kyuga-android:0.0.1"
+      ```
+    * iOS
+        
+       [ ![Download](https://api.bintray.com/packages/messai/maven/kyuga/images/download.svg) ](https://bintray.com/messai/maven/kyuga/_latestVersion)
+      ```groovy
+      implementation "in.messai.kyuga:kyuga-ios:0.0.1"
+      ```
 ## Versioning
 
 We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/your/project/tags).
