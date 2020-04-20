@@ -7,15 +7,13 @@ import com.twelfthmile.kyuga.types.GenTrie
 import com.twelfthmile.kyuga.types.Pair
 import com.twelfthmile.kyuga.types.Response
 import com.twelfthmile.kyuga.types.RootTrie
-import com.twelfthmile.kyuga.utils.FsaContextMap
-import com.twelfthmile.kyuga.utils.KYugaConstants
-import com.twelfthmile.kyuga.utils.Util
+import com.twelfthmile.kyuga.utils.*
 
 fun Char.isAlpha(): Boolean = this in 'a'..'z' || this in 'A'..'Z'
 
 object Kyuga {
 
-    private val D_DEBUG = true
+    private val D_DEBUG = false
 
     private val root: RootTrie
         get() = LazyHolder.root
@@ -23,10 +21,6 @@ object Kyuga {
     private object LazyHolder {
         internal var root = createRoot()
     }
-
-//    fun init() {
-//        val root = root
-//    }
 
     private fun createRoot(): RootTrie {
         val root = RootTrie()
@@ -38,14 +32,14 @@ object Kyuga {
         root.next["FSA_TZ"] = GenTrie()
         root.next["FSA_DAYSFFX"] = GenTrie()
         root.next["FSA_UPI"] = GenTrie()
-        seeding(KYugaConstants.FSA_MONTHS, root.next["FSA_MONTHS"])
-        seeding(KYugaConstants.FSA_DAYS, root.next["FSA_DAYS"])
-        seeding(KYugaConstants.FSA_TIMEPRFX, root.next["FSA_TIMEPRFX"])
-        seeding(KYugaConstants.FSA_AMT, root.next["FSA_AMT"])
-        seeding(KYugaConstants.FSA_TIMES, root.next["FSA_TIMES"])
-        seeding(KYugaConstants.FSA_TZ, root.next["FSA_TZ"])
-        seeding(KYugaConstants.FSA_DAYSFFX, root.next["FSA_DAYSFFX"])
-        seeding(KYugaConstants.FSA_UPI, root.next["FSA_UPI"])
+        seeding(FSA_MONTHS, root.next["FSA_MONTHS"])
+        seeding(FSA_DAYS, root.next["FSA_DAYS"])
+        seeding(FSA_TIMEPRFX, root.next["FSA_TIMEPRFX"])
+        seeding(FSA_AMT, root.next["FSA_AMT"])
+        seeding(FSA_TIMES, root.next["FSA_TIMES"])
+        seeding(FSA_TZ, root.next["FSA_TZ"])
+        seeding(FSA_DAYSFFX, root.next["FSA_DAYSFFX"])
+        seeding(FSA_UPI, root.next["FSA_UPI"])
         return root
     }
 
@@ -73,6 +67,13 @@ object Kyuga {
                 i++
             }
         }
+    }
+
+    fun tokenise(message: List<String>): List<String> = message.map {
+        val parseResponse = parse(it)
+        parseResponse?.let { pr ->
+            pr.type
+        } ?: it
     }
 
     /**
@@ -148,29 +149,29 @@ object Kyuga {
     ): Pair<String, Any>? {
         val index = p.a
         val map = p.b
-        if (map.type == KYugaConstants.TY_DTE) {
-            if (map.contains(KYugaConstants.DT_MMM) && map.size() < 3)
+        if (map.type == TY_DTE) {
+            if (map.contains(DT_MMM) && map.size() < 3)
             //may fix
-                return Pair(KYugaConstants.TY_STR, str.substring(0, index))
-            if (map.contains(KYugaConstants.DT_HH) && map.contains(KYugaConstants.DT_mm) && !map.contains(KYugaConstants.DT_D) && !map.contains(
-                    KYugaConstants.DT_DD
-                ) && !map.contains(KYugaConstants.DT_MM) && !map.contains(KYugaConstants.DT_MMM) && !map.contains(KYugaConstants.DT_YY) && !map.contains(
-                    KYugaConstants.DT_YYYY
+                return Pair(TY_STR, str.substring(0, index))
+            if (map.contains(DT_HH) && map.contains(DT_mm) && !map.contains(DT_D) && !map.contains(
+                    DT_DD
+                ) && !map.contains(DT_MM) && !map.contains(DT_MMM) && !map.contains(DT_YY) && !map.contains(
+                    DT_YYYY
                 )
             ) {
-                map.setType(KYugaConstants.TY_TME, null)
-                map.setVal("time", map[KYugaConstants.DT_HH] + ":" + map[KYugaConstants.DT_mm])
-                return Pair(KYugaConstants.TY_TME, str.substring(0, index))
+                map.setType(TY_TME, null)
+                map.setVal("time", map[DT_HH] + ":" + map[DT_mm])
+                return Pair(TY_TME, str.substring(0, index))
             }
             val d = map.getDate(config)
             return if (d != null)
                 p.b.type?.let { Pair<String, Any>(it, d) }
             else
-                Pair(KYugaConstants.TY_STR, str.substring(0, index))
+                Pair(TY_STR, str.substring(0, index))
         } else {
             return if (map[map.type!!] != null) {
-                if (map.type == KYugaConstants.TY_ACC && config.containsKey(KYugaConstants.YUGA_SOURCE_CONTEXT) && config[KYugaConstants.YUGA_SOURCE_CONTEXT] == KYugaConstants.YUGA_SC_CURR) {
-                    Pair<String, Any>(KYugaConstants.TY_AMT, map[map.type!!]!!.replace("X".toRegex(), ""))
+                if (map.type == TY_ACC && config.containsKey(YUGA_SOURCE_CONTEXT) && config[YUGA_SOURCE_CONTEXT] == YUGA_SC_CURR) {
+                    Pair<String, Any>(TY_AMT, map[map.type!!]!!.replace("X".toRegex(), ""))
                 } else {
                     p.b.type?.let { map[map.type!!]?.let { tg -> Pair<String, Any>(it, tg) } }
                 }
@@ -182,7 +183,7 @@ object Kyuga {
 
     private fun generateDefaultConfig(): Map<String, String> {
         val config = mutableMapOf<String, String>()
-        config[KYugaConstants.YUGA_CONF_DATE] = formatDateDefault(MultDate())
+        config[YUGA_CONF_DATE] = formatDateDefault(MultDate())
         return config
     }
 
@@ -200,35 +201,35 @@ object Kyuga {
         val delimiterStack = DelimiterStack()
         str = str.toLowerCase()
         var counter = 0
-        loop@ while (state > 0 && i < str.length) {
+        while (state > 0 && i < str.length) {
             c = str[i]
             when (state) {
                 1 -> if (Util.isNumber(c)) {
-                    map.setType(KYugaConstants.TY_NUM, null)
-                    map.put(KYugaConstants.TY_NUM, c)
+                    map.setType(TY_NUM, null)
+                    map.put(TY_NUM, c)
                     state = 2
                 } else if (Util.checkTypes(root, "FSA_MONTHS", str.substring(i))?.let {
-                        map.setType(KYugaConstants.TY_DTE, null)
-                        map.put(KYugaConstants.DT_MMM, it.b)
+                        map.setType(TY_DTE, null)
+                        map.put(DT_MMM, it.b)
                         i += it.a
                     true} == true) {
                     state = 33
                 } else if (Util.checkTypes(root, "FSA_DAYS", str.substring(i))?.let {
-                        map.setType(KYugaConstants.TY_DTE, null)
-                        map.put(KYugaConstants.DT_DD, it.b)
+                        map.setType(TY_DTE, null)
+                        map.put(DT_DD, it.b)
                         i += it.a
                         true
                     } == true) {
                     state = 30
-                } else if (c.toInt() == KYugaConstants.CH_HYPH) {//it could be a negative number
+                } else if (c.toInt() == CH_HYPH) {//it could be a negative number
                     state = 37
-                } else if (c.toInt() == KYugaConstants.CH_LSBT) {//it could be an OTP
+                } else if (c.toInt() == CH_LSBT) {//it could be an OTP
                     state = 1
                 } else {
                     state = accAmtNumPct(str, i, map, config)
                     if (map.type == null)
                         return null
-                    if (state == -1 && map.type != KYugaConstants.TY_PCT) {
+                    if (state == -1 && map.type != TY_PCT) {
                         i -= 1
                     }
                 }
@@ -238,22 +239,22 @@ object Kyuga {
                     state = 3
                 } else if (Util.isTimeOperator(c)) {
                     delimiterStack.push(c)
-                    map.setType(KYugaConstants.TY_DTE, KYugaConstants.DT_HH)
+                    map.setType(TY_DTE, DT_HH)
                     state = 4
-                } else if (Util.isDateOperator(c) || c.toInt() == KYugaConstants.CH_COMA) {
+                } else if (Util.isDateOperator(c) || c.toInt() == CH_COMA) {
                     delimiterStack.push(c)
-                    map.setType(KYugaConstants.TY_DTE, KYugaConstants.DT_D)
+                    map.setType(TY_DTE, DT_D)
                     state = 16
                 } else if (checkMonthType(str, i)?.let {
-                        map.setType(KYugaConstants.TY_DTE, KYugaConstants.DT_D)
-                        map.put(KYugaConstants.DT_MMM, it.b)
+                        map.setType(TY_DTE, DT_D)
+                        map.put(DT_MMM, it.b)
                         i += it.a
                         true
                     } == true) {
                     state = 24
                 } else {
                     state = accAmtNumPct(str, i, map, config)
-                    if (state == -1 && map.type != KYugaConstants.TY_PCT)
+                    if (state == -1 && map.type != TY_PCT)
                         i -= 1
                 }
                 3 -> if (Util.isNumber(c)) {
@@ -261,28 +262,28 @@ object Kyuga {
                     state = 8
                 } else if (Util.isTimeOperator(c)) {
                     delimiterStack.push(c)
-                    map.setType(KYugaConstants.TY_DTE, KYugaConstants.DT_HH)
+                    map.setType(TY_DTE, DT_HH)
                     state = 4
-                } else if (Util.isDateOperator(c) || c.toInt() == KYugaConstants.CH_COMA) {
+                } else if (Util.isDateOperator(c) || c.toInt() == CH_COMA) {
                     delimiterStack.push(c)
-                    map.setType(KYugaConstants.TY_DTE, KYugaConstants.DT_D)
+                    map.setType(TY_DTE, DT_D)
                     state = 16
                 } else if (checkMonthType(str, i)?.let {
-                        map.setType(KYugaConstants.TY_DTE, KYugaConstants.DT_D)
-                        map.put(KYugaConstants.DT_MMM, it.b)
+                        map.setType(TY_DTE, DT_D)
+                        map.put(DT_MMM, it.b)
                         i += it.a
                         true
                     } == true) {
                     state = 24
                 } else if (Util.checkTypes(root, "FSA_DAYSFFX", str.substring(i))?.let {
-                        map.setType(KYugaConstants.TY_DTE, KYugaConstants.DT_D)
+                        map.setType(TY_DTE, DT_D)
                         i += it.a
                         true
                     } == true) {
                     state = 32
                 } else {
                     state = accAmtNumPct(str, i, map, config)
-                    if (state == -1 && map.type != KYugaConstants.TY_PCT)
+                    if (state == -1 && map.type != TY_PCT)
                         i -= 1
                 }
                 4 //hours to mins
@@ -290,21 +291,21 @@ object Kyuga {
                     map.upgrade(c)//hh to mm
                     state = 5
                 } else { //saw a colon randomly, switch back to num from hours
-                    if (!map.contains(KYugaConstants.DT_MMM))
-                        map.setType(KYugaConstants.TY_NUM, KYugaConstants.TY_NUM)
+                    if (!map.contains(DT_MMM))
+                        map.setType(TY_NUM, TY_NUM)
                     i -= 2 //move back so that colon is omitted
                     state = -1
                 }
                 5 -> if (Util.isNumber(c)) {
                     map.append(c)
                     state = 5
-                } else if (c.toInt() == KYugaConstants.CH_COLN)
+                } else if (c.toInt() == CH_COLN)
                     state = 6
                 else if (c == 'a' && i + 1 < str.length && str[i + 1] == 'm') {
                     i += 1
                     state = -1
                 } else if (c == 'p' && i + 1 < str.length && str[i + 1] == 'm') {
-                    map.put(KYugaConstants.DT_HH, (map[KYugaConstants.DT_HH]!!.toInt() + 12).toString())
+                    map.put(DT_HH, (map[DT_HH]!!.toInt() + 12).toString())
                     i += 1
                     state = -1
                 } else if (Util.checkTypes(root, "FSA_TIMES", str.substring(i))?.let {
@@ -326,13 +327,13 @@ object Kyuga {
                 7 -> {
                     if (c == 'a' && i + 1 < str.length && str[i + 1] == 'm') {
                         i = i + 1
-                        val hh = map[KYugaConstants.DT_HH]!!.toInt()
+                        val hh = map[DT_HH]!!.toInt()
                         if (hh == 12)
-                            map.put(KYugaConstants.DT_HH, 0.toString())
+                            map.put(DT_HH, 0.toString())
                     } else if (c == 'p' && i + 1 < str.length && str[i + 1] == 'm') {
-                        val hh = map[KYugaConstants.DT_HH]!!.toInt()
+                        val hh = map[DT_HH]!!.toInt()
                         if (hh != 12)
-                            map.put(KYugaConstants.DT_HH, (hh + 12).toString())
+                            map.put(DT_HH, (hh + 12).toString())
                         i = i + 1
                     } else if (Util.checkTypes(root, "FSA_TIMES", str.substring(i))?.let {
                             i += it.a
@@ -348,11 +349,11 @@ object Kyuga {
                     state = 9
                 } else {
                     state = accAmtNumPct(str, i, map, config)
-                    if (c.toInt() == KYugaConstants.CH_SPACE && state == -1 && i + 1 < str.length && Util.isNumber(str[i + 1]))
+                    if (c.toInt() == CH_SPACE && state == -1 && i + 1 < str.length && Util.isNumber(str[i + 1]))
                         state = 12
-                    else if (c.toInt() == KYugaConstants.CH_HYPH && state == -1 && i + 1 < str.length && Util.isNumber(str[i + 1]))
+                    else if (c.toInt() == CH_HYPH && state == -1 && i + 1 < str.length && Util.isNumber(str[i + 1]))
                         state = 45
-                    else if (state == -1 && map.type != KYugaConstants.TY_PCT)
+                    else if (state == -1 && map.type != TY_PCT)
                         i = i - 1
                 }
                 9 -> if (Util.isDateOperator(c)) {
@@ -364,13 +365,13 @@ object Kyuga {
                     state = 15
                 } else {
                     state = accAmtNumPct(str, i, map, config)
-                    if (state == -1 && map.type != KYugaConstants.TY_PCT) {//NUM
+                    if (state == -1 && map.type != TY_PCT) {//NUM
                         i = i - 1
                     }
                 }//handle for num case
                 10 -> if (Util.isNumber(c)) {
                     map.append(c)
-                    map.setType(KYugaConstants.TY_AMT, KYugaConstants.TY_AMT)
+                    map.setType(TY_AMT, TY_AMT)
                     state = 14
                 } else { //saw a fullstop randomly
                     map.pop()//remove the dot which was appended
@@ -380,7 +381,7 @@ object Kyuga {
                 11 -> if (c.toInt() == 42 || c.toInt() == 88 || c.toInt() == 120)
                 //*Xx
                     map.append('X')
-                else if (c.toInt() == KYugaConstants.CH_HYPH)
+                else if (c.toInt() == CH_HYPH)
                     state = 11
                 else if (Util.isNumber(c)) {
                     map.append(c)
@@ -390,7 +391,7 @@ object Kyuga {
                     ))
                 )
                     state = 11
-                else if (c.toInt() == KYugaConstants.CH_FSTP && lookAheadForInstr(str, i).let {
+                else if (c.toInt() == CH_FSTP && lookAheadForInstr(str, i).let {
                         if (it > 0) {
                             i = it
                             true
@@ -404,18 +405,18 @@ object Kyuga {
                     state = -1
                 }
                 12 -> if (Util.isNumber(c)) {
-                    map.setType(KYugaConstants.TY_AMT, KYugaConstants.TY_AMT)
+                    map.setType(TY_AMT, TY_AMT)
                     map.append(c)
-                } else if (c.toInt() == KYugaConstants.CH_COMA)
+                } else if (c.toInt() == CH_COMA)
                 //comma
                     state = 12
-                else if (c.toInt() == KYugaConstants.CH_FSTP) { //dot
+                else if (c.toInt() == CH_FSTP) { //dot
                     map.append(c)
                     state = 10
-                } else if (c.toInt() == KYugaConstants.CH_HYPH && i + 1 < str.length && Util.isNumber(str[i + 1])) {
+                } else if (c.toInt() == CH_HYPH && i + 1 < str.length && Util.isNumber(str[i + 1])) {
                     state = 39
                 } else {
-                    if (i - 1 > 0 && str[i - 1].toInt() == KYugaConstants.CH_COMA)
+                    if (i - 1 > 0 && str[i - 1].toInt() == CH_COMA)
                         i = i - 2
                     else
                         i = i - 1
@@ -426,12 +427,12 @@ object Kyuga {
                 else if (c.toInt() == 42 || c.toInt() == 88 || c.toInt() == 120)
                 //*Xx
                     map.append('X')
-                else if (c.toInt() == KYugaConstants.CH_FSTP && config.containsKey(KYugaConstants.YUGA_SOURCE_CONTEXT) && config[KYugaConstants.YUGA_SOURCE_CONTEXT] == KYugaConstants.YUGA_SC_CURR) { //LIC **150.00 fix
-                    map.setType(KYugaConstants.TY_AMT, KYugaConstants.TY_AMT)
-                    map.put(KYugaConstants.TY_AMT, map[KYugaConstants.TY_AMT]!!.replace("X".toRegex(), ""))
+                else if (c.toInt() == CH_FSTP && config.containsKey(YUGA_SOURCE_CONTEXT) && config[YUGA_SOURCE_CONTEXT] == YUGA_SC_CURR) { //LIC **150.00 fix
+                    map.setType(TY_AMT, TY_AMT)
+                    map.put(TY_AMT, map[TY_AMT]!!.replace("X".toRegex(), ""))
                     map.append(c)
                     state = 10
-                } else if (c.toInt() == KYugaConstants.CH_FSTP&& lookAheadForInstr(str, i).let {
+                } else if (c.toInt() == CH_FSTP&& lookAheadForInstr(str, i).let {
                         if (it > 0) {
                             i = it
                             true
@@ -446,51 +447,54 @@ object Kyuga {
                 }
                 14 -> if (Util.isNumber(c)) {
                     map.append(c)
-                } else if (c.toInt() == KYugaConstants.CH_PCT) {
-                    map.setType(KYugaConstants.TY_PCT, KYugaConstants.TY_PCT)
+                } else if (c.toInt() == CH_PCT) {
+                    map.setType(TY_PCT, TY_PCT)
                     state = -1
                 } else if ((c == 'k' || c == 'c') && i + 1 < str.length && str[i + 1] == 'm') {
-                    map.setType(KYugaConstants.TY_DST, KYugaConstants.TY_DST)
+                    map.setType(TY_DST, TY_DST)
                     i += 1
                     state = -1
                 } else if ((c == 'k' || c == 'm') && i + 1 < str.length && str[i + 1] == 'g') {
-                    map.setType(KYugaConstants.TY_WGT, KYugaConstants.TY_WGT)
+                    map.setType(TY_WGT, TY_WGT)
                     i += 1
                     state = -1
                 } else {
-                    if (c.toInt() == KYugaConstants.CH_FSTP && i + 1 < str.length && Util.isNumber(str[i + 1])) {
+                    var tempBrk = true
+                    if (c.toInt() == CH_FSTP && i + 1 < str.length && Util.isNumber(str[i + 1])) {
                         val samt = map[map.type!!]
                         if (samt!!.contains(".")) {
-                            val samtarr = samt.split("\\.".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
+                            val samtarr = samt.split("\\.".toRegex())
                             if (samtarr.size == 2) {
-                                map.type = KYugaConstants.TY_DTE
-                                map.put(KYugaConstants.DT_D, samtarr[0])
-                                map.put(KYugaConstants.DT_MM, samtarr[1])
+                                map.type = TY_DTE
+                                map.put(DT_D, samtarr[0])
+                                map.put(DT_MM, samtarr[1])
                                 state = 19
-                                break@loop
+                                tempBrk = false
                             }
                         }
                     }
-                    i = i - 1
-                    state = -1
+                    if(tempBrk) {
+                        i -= 1
+                        state = -1
+                    }
                 }
                 15 -> if (Util.isNumber(c)) {
                     counter++
                     map.append(c)
-                } else if (c.toInt() == KYugaConstants.CH_COMA)
+                } else if (c.toInt() == CH_COMA)
                 //comma
                     state = 12
-                else if (c.toInt() == KYugaConstants.CH_FSTP) { //dot
+                else if (c.toInt() == CH_FSTP) { //dot
                     map.append(c)
                     state = 10
                 } else if ((c.toInt() == 42 || c.toInt() == 88 || c.toInt() == 120) && i + 1 < str.length && (Util.isNumber(
                         str[i + 1]
-                    ) || str[i + 1].toInt() == KYugaConstants.CH_HYPH || str[i + 1].toInt() == 42 || str[i + 1].toInt() == 88 || str[i + 1].toInt() == 120)
+                    ) || str[i + 1].toInt() == CH_HYPH || str[i + 1].toInt() == 42 || str[i + 1].toInt() == 88 || str[i + 1].toInt() == 120)
                 ) {//*Xx
-                    map.setType(KYugaConstants.TY_ACC, KYugaConstants.TY_ACC)
+                    map.setType(TY_ACC, TY_ACC)
                     map.append('X')
                     state = 11
-                } else if (c.toInt() == KYugaConstants.CH_SPACE && i + 2 < str.length && Util.isNumber(str[i + 1]) && Util.isNumber(
+                } else if (c.toInt() == CH_SPACE && i + 2 < str.length && Util.isNumber(str[i + 1]) && Util.isNumber(
                         str[i + 2]
                     )
                 ) {
@@ -505,20 +509,20 @@ object Kyuga {
                 16 -> if (Util.isNumber(c)) {
                     map.upgrade(c)
                     state = 17
-                } else if (c.toInt() == KYugaConstants.CH_SPACE || c.toInt() == KYugaConstants.CH_COMA)
+                } else if (c.toInt() == CH_SPACE || c.toInt() == CH_COMA)
                     state = 16
                 else if (checkMonthType(str, i)?.let {
-                        map.put(KYugaConstants.DT_MMM, it.b)
+                        map.put(DT_MMM, it.b)
                         i += it.a
                         true
                     } == true) {
                     state = 24
-                } else if (c.toInt() == KYugaConstants.CH_FSTP) { //dot
-                    map.setType(KYugaConstants.TY_NUM, KYugaConstants.TY_NUM)
+                } else if (c.toInt() == CH_FSTP) { //dot
+                    map.setType(TY_NUM, TY_NUM)
                     map.append(c)
                     state = 10
                 } else if (i > 0 && Util.checkTypes(root, "FSA_TIMES", str.substring(i))?.let {
-                        map.setType(KYugaConstants.TY_TME, null)
+                        map.setType(TY_TME, null)
                         var s = str.substring(0, i)
                         if (it.b == "mins" || it.b == "minutes")
                             s = "00$s"
@@ -529,13 +533,13 @@ object Kyuga {
                     state = -1
                 } else {//this is just a number, not a date
                     //to cater to 16 -Nov -17
-                    if (delimiterStack.pop().toInt() == KYugaConstants.CH_SPACE && c.toInt() == KYugaConstants.CH_HYPH && i + 1 < str.length && (Util.isNumber(
+                    if (delimiterStack.pop().toInt() == CH_SPACE && c.toInt() == CH_HYPH && i + 1 < str.length && (Util.isNumber(
                             str[i + 1]
                         ) || checkMonthType(str, i + 1) != null)
                     ) {
                         state = 16
                     } else {
-                        map.setType(KYugaConstants.TY_NUM, KYugaConstants.TY_NUM)
+                        map.setType(TY_NUM, TY_NUM)
                         var j = i
                         while (!Util.isNumber(str[j]))
                             j--
@@ -549,40 +553,40 @@ object Kyuga {
                 } else if (Util.isDateOperator(c)) {
                     delimiterStack.push(c)
                     state = 19
-                } else if (c.toInt() == KYugaConstants.CH_COMA && delimiterStack.pop().toInt() == KYugaConstants.CH_COMA) { //comma
-                    map.setType(KYugaConstants.TY_NUM, KYugaConstants.TY_NUM)
+                } else if (c.toInt() == CH_COMA && delimiterStack.pop().toInt() == CH_COMA) { //comma
+                    map.setType(TY_NUM, TY_NUM)
                     state = 12
-                } else if (c.toInt() == KYugaConstants.CH_FSTP && delimiterStack.pop().toInt() == KYugaConstants.CH_COMA) { //dot
-                    map.setType(KYugaConstants.TY_NUM, KYugaConstants.TY_NUM)
+                } else if (c.toInt() == CH_FSTP && delimiterStack.pop().toInt() == CH_COMA) { //dot
+                    map.setType(TY_NUM, TY_NUM)
                     map.append(c)
                     state = 10
                 } else {
-                    map.setType(KYugaConstants.TY_STR, KYugaConstants.TY_STR)
+                    map.setType(TY_STR, TY_STR)
                     i = i - 1
                     state = -1
                 }//we should handle amt case, where comma led to 16,17 as opposed to 12
                 18 -> if (Util.isDateOperator(c)) {
                     delimiterStack.push(c)
                     state = 19
-                } else if (Util.isNumber(c) && delimiterStack.pop().toInt() == KYugaConstants.CH_COMA) {
-                    map.setType(KYugaConstants.TY_NUM, KYugaConstants.TY_NUM)
+                } else if (Util.isNumber(c) && delimiterStack.pop().toInt() == CH_COMA) {
+                    map.setType(TY_NUM, TY_NUM)
                     state = 12
                     map.append(c)
-                } else if (Util.isNumber(c) && delimiterStack.pop().toInt() == KYugaConstants.CH_HYPH) {
-                    map.setType(KYugaConstants.TY_NUM, KYugaConstants.TY_NUM)
+                } else if (Util.isNumber(c) && delimiterStack.pop().toInt() == CH_HYPH) {
+                    map.setType(TY_NUM, TY_NUM)
                     state = 42
                     map.append(c)
-                } else if (c.toInt() == KYugaConstants.CH_COMA && delimiterStack.pop().toInt() == KYugaConstants.CH_COMA) { //comma
-                    map.setType(KYugaConstants.TY_NUM, KYugaConstants.TY_NUM)
+                } else if (c.toInt() == CH_COMA && delimiterStack.pop().toInt() == CH_COMA) { //comma
+                    map.setType(TY_NUM, TY_NUM)
                     state = 12
-                } else if (c.toInt() == KYugaConstants.CH_FSTP && delimiterStack.pop().toInt() == KYugaConstants.CH_COMA) { //dot
-                    map.setType(KYugaConstants.TY_NUM, KYugaConstants.TY_NUM)
+                } else if (c.toInt() == CH_FSTP && delimiterStack.pop().toInt() == CH_COMA) { //dot
+                    map.setType(TY_NUM, TY_NUM)
                     map.append(c)
                     state = 10
-                } else if (c.toInt() == KYugaConstants.CH_FSTP && map.contains(KYugaConstants.DT_D) && map.contains(KYugaConstants.DT_MM)) { //dot
+                } else if (c.toInt() == CH_FSTP && map.contains(DT_D) && map.contains(DT_MM)) { //dot
                     state = -1
                 } else {
-                    map.setType(KYugaConstants.TY_STR, KYugaConstants.TY_STR)
+                    map.setType(TY_STR, TY_STR)
                     i = i - 1
                     state = -1
                 }//we should handle amt case, where comma led to 16,17 as opposed to 12
@@ -599,13 +603,13 @@ object Kyuga {
                     map.append(c)
                     state = 21
                 } else if (c == ':') {
-                    if (map.contains(KYugaConstants.DT_YY))
-                        map.convert(KYugaConstants.DT_YY, KYugaConstants.DT_HH)
-                    else if (map.contains(KYugaConstants.DT_YYYY))
-                        map.convert(KYugaConstants.DT_YYYY, KYugaConstants.DT_HH)
+                    if (map.contains(DT_YY))
+                        map.convert(DT_YY, DT_HH)
+                    else if (map.contains(DT_YYYY))
+                        map.convert(DT_YYYY, DT_HH)
                     state = 4
                 } else {
-                    map.remove(KYugaConstants.DT_YY)//since there is no one number year
+                    map.remove(DT_YY)//since there is no one number year
                     i = i - 1
                     state = -1
                 }
@@ -613,10 +617,10 @@ object Kyuga {
                     map.upgrade(c)
                     state = 22
                 } else if (c == ':') {
-                    if (map.contains(KYugaConstants.DT_YY))
-                        map.convert(KYugaConstants.DT_YY, KYugaConstants.DT_HH)
-                    else if (map.contains(KYugaConstants.DT_YYYY))
-                        map.convert(KYugaConstants.DT_YYYY, KYugaConstants.DT_HH)
+                    if (map.contains(DT_YY))
+                        map.convert(DT_YY, DT_HH)
+                    else if (map.contains(DT_YYYY))
+                        map.convert(DT_YYYY, DT_HH)
                     state = 4
                 } else {
                     i = i - 1
@@ -626,17 +630,17 @@ object Kyuga {
                     map.append(c)
                     state = -1
                 } else {
-                    map.remove(KYugaConstants.DT_YYYY)//since there is no three number year
+                    map.remove(DT_YYYY)//since there is no three number year
                     i = i - 1
                     state = -1
                 }
-                24 -> if (Util.isDateOperator(c) || c.toInt() == KYugaConstants.CH_COMA) {
+                24 -> if (Util.isDateOperator(c) || c.toInt() == CH_COMA) {
                     delimiterStack.push(c)
                     state = 24
                 } else if (Util.isNumber(c)) {
                     map.upgrade(c)
                     state = 20
-                } else if (c.toInt() == KYugaConstants.CH_SQOT && i + 1 < str.length && Util.isNumber(str[i + 1])) {
+                } else if (c.toInt() == CH_SQOT && i + 1 < str.length && Util.isNumber(str[i + 1])) {
                     state = 24
                 } else if (c == '|') {
                     state = 24
@@ -646,11 +650,11 @@ object Kyuga {
                 }
                 25//potential year start comes here
                 -> if (Util.isNumber(c)) {
-                    map.setType(KYugaConstants.TY_DTE, KYugaConstants.DT_YYYY)
-                    map.put(KYugaConstants.DT_MM, c)
+                    map.setType(TY_DTE, DT_YYYY)
+                    map.put(DT_MM, c)
                     state = 26
                 } else if (i > 0 && Util.checkTypes(root, "FSA_TIMES", str.substring(i))?.let {
-                        map.setType(KYugaConstants.TY_TME, null)
+                        map.setType(TY_TME, null)
                         var s = str.substring(0, i)
                         if (it.b == "mins")
                             s = "00$s"
@@ -668,7 +672,7 @@ object Kyuga {
                     map.append(c)
                     state = 27
                 } else {
-                    map.setType(KYugaConstants.TY_STR, KYugaConstants.TY_STR)
+                    map.setType(TY_STR, TY_STR)
                     i = i - 1
                     state = -1
                 }
@@ -676,36 +680,36 @@ object Kyuga {
                     delimiterStack.push(c)
                     state = 28
                 } else if (Util.isNumber(c)) {//it was a number, most probably telephone number
-                    if (map.type == KYugaConstants.TY_DTE) {
-                        map.setType(KYugaConstants.TY_NUM, KYugaConstants.TY_NUM)
+                    if (map.type == TY_DTE) {
+                        map.setType(TY_NUM, TY_NUM)
                     }
                     map.append(c)
-                    if ((delimiterStack.pop().toInt() == KYugaConstants.CH_SLSH || delimiterStack.pop().toInt() == KYugaConstants.CH_HYPH) && i + 1 < str.length && Util.isNumber(
+                    if ((delimiterStack.pop().toInt() == CH_SLSH || delimiterStack.pop().toInt() == CH_HYPH) && i + 1 < str.length && Util.isNumber(
                             str[i + 1]
                         ) && (i + 2 == str.length || Util.isDelimiter(str[i + 2]))
                     ) {//flight time 0820/0950
-                        map.setType(KYugaConstants.TY_TMS, KYugaConstants.TY_TMS)
+                        map.setType(TY_TMS, TY_TMS)
                         map.append(str[i + 1])
                         i = i + 1
                         state = -1
-                    } else if (delimiterStack.pop().toInt() == KYugaConstants.CH_SPACE) {
+                    } else if (delimiterStack.pop().toInt() == CH_SPACE) {
                         state = 41
                     } else
                         state = 12
                 } else if (c.toInt() == 42 || c.toInt() == 88 || c.toInt() == 120) {//*Xx
-                    map.setType(KYugaConstants.TY_ACC, KYugaConstants.TY_ACC)
+                    map.setType(TY_ACC, TY_ACC)
                     map.append('X')
                     state = 11
                 } else {
-                    map.setType(KYugaConstants.TY_STR, KYugaConstants.TY_STR)
+                    map.setType(TY_STR, TY_STR)
                     i = i - 1
                     state = -1
                 }
                 28 -> if (Util.isNumber(c)) {
-                    map.put(KYugaConstants.DT_D, c)
+                    map.put(DT_D, c)
                     state = 29
                 } else {
-                    map.setType(KYugaConstants.TY_STR, KYugaConstants.TY_STR)
+                    map.setType(TY_STR, TY_STR)
                     i = i - 2
                     state = -1
                 }
@@ -716,13 +720,13 @@ object Kyuga {
                         i = i - 1
                     state = -1
                 }
-                30 -> if (c.toInt() == KYugaConstants.CH_COMA || c.toInt() == KYugaConstants.CH_SPACE)
+                30 -> if (c.toInt() == CH_COMA || c.toInt() == CH_SPACE)
                     state = 30
                 else if (Util.isNumber(c)) {
-                    map.put(KYugaConstants.DT_D, c)
+                    map.put(DT_D, c)
                     state = 31
                 } else {
-                    map.type = KYugaConstants.TY_DTE
+                    map.type = TY_DTE
                     i = i - 1
                     state = -1
                 }
@@ -730,24 +734,24 @@ object Kyuga {
                     map.append(c)
                     state = 32
                 } else if (checkMonthType(str, i)?.let {
-                        map.put(KYugaConstants.DT_MMM, it.b)
+                        map.put(DT_MMM, it.b)
                         i += it.a
                         true
                     } == true) {
                     state = 24
-                } else if (c.toInt() == KYugaConstants.CH_COMA || c.toInt() == KYugaConstants.CH_SPACE)
+                } else if (c.toInt() == CH_COMA || c.toInt() == CH_SPACE)
                     state = 32
                 else {
                     i = i - 1
                     state = -1
                 }
                 32 -> if (checkMonthType(str, i)?.let {
-                    map.put(KYugaConstants.DT_MMM, it.b)
+                    map.put(DT_MMM, it.b)
                     i += it.a
                     true
                 } == true) {
                     state = 24
-                } else if (c.toInt() == KYugaConstants.CH_COMA || c.toInt() == KYugaConstants.CH_SPACE)
+                } else if (c.toInt() == CH_COMA || c.toInt() == CH_SPACE)
                     state = 32
                 else if (Util.checkTypes(root, "FSA_DAYSFFX", str.substring(i))?.let {
                         i += it.a
@@ -762,63 +766,63 @@ object Kyuga {
                     state = -1
                 }
                 33 -> if (Util.isNumber(c)) {
-                    map.put(KYugaConstants.DT_D, c)
+                    map.put(DT_D, c)
                     state = 34
-                } else if (c.toInt() == KYugaConstants.CH_SPACE || c.toInt() == KYugaConstants.CH_COMA || c.toInt() == KYugaConstants.CH_HYPH)
+                } else if (c.toInt() == CH_SPACE || c.toInt() == CH_COMA || c.toInt() == CH_HYPH)
                     state = 33
                 else {
-                    map.type = KYugaConstants.TY_DTE
+                    map.type = TY_DTE
                     i -= 1
                     state = -1
                 }
                 34 -> if (Util.isNumber(c)) {
                     map.append(c)
                     state = 35
-                } else if (c.toInt() == KYugaConstants.CH_SPACE || c.toInt() == KYugaConstants.CH_COMA)
+                } else if (c.toInt() == CH_SPACE || c.toInt() == CH_COMA)
                     state = 35
                 else {
-                    map.type = KYugaConstants.TY_DTE
+                    map.type = TY_DTE
                     i -= 1
                     state = -1
                 }
                 35 -> if (Util.isNumber(c)) {
                     if (i > 1 && Util.isNumber(str[i - 1])) {
-                        map.convert(KYugaConstants.DT_D, KYugaConstants.DT_YYYY)
+                        map.convert(DT_D, DT_YYYY)
                         map.append(c)
                     } else
-                        map.put(KYugaConstants.DT_YY, c)
+                        map.put(DT_YY, c)
                     state = 20
-                } else if (c.toInt() == KYugaConstants.CH_SPACE || c.toInt() == KYugaConstants.CH_COMA)
+                } else if (c.toInt() == CH_SPACE || c.toInt() == CH_COMA)
                     state = 40
                 else {
-                    map.type = KYugaConstants.TY_DTE
+                    map.type = TY_DTE
                     i -= 1
                     state = -1
                 }
                 36 -> if (Util.isNumber(c)) {
                     map.append(c)
                     counter++
-                } else if (c.toInt() == KYugaConstants.CH_FSTP && i + 1 < str.length && Util.isNumber(str[i + 1])) {
+                } else if (c.toInt() == CH_FSTP && i + 1 < str.length && Util.isNumber(str[i + 1])) {
                     map.append(c)
                     state = 10
-                } else if (c.toInt() == KYugaConstants.CH_HYPH && i + 1 < str.length && Util.isNumber(str[i + 1])) {
+                } else if (c.toInt() == CH_HYPH && i + 1 < str.length && Util.isNumber(str[i + 1])) {
                     delimiterStack.push(c)
                     map.append(c)
                     state = 16
                 } else {
                     if (counter == 12 || Util.isNumber(str.substring(1, i)))
-                        map.setType(KYugaConstants.TY_NUM, KYugaConstants.TY_NUM)
+                        map.setType(TY_NUM, TY_NUM)
                     else
                         return null
                     state = -1
                 }
                 37 -> if (Util.isNumber(c)) {
-                    map.setType(KYugaConstants.TY_AMT, KYugaConstants.TY_AMT)
-                    map.put(KYugaConstants.TY_AMT, '-')
+                    map.setType(TY_AMT, TY_AMT)
+                    map.put(TY_AMT, '-')
                     map.append(c)
                     state = 12
-                } else if (c.toInt() == KYugaConstants.CH_FSTP) {
-                    map.put(KYugaConstants.TY_AMT, '-')
+                } else if (c.toInt() == CH_FSTP) {
+                    map.put(TY_AMT, '-')
                     map.append(c)
                     state = 10
                 } else
@@ -831,16 +835,16 @@ object Kyuga {
                 -> if (Util.isNumber(c))
                     map.append(c)
                 else {
-                    map.setType(KYugaConstants.TY_ACC, KYugaConstants.TY_ACC)
+                    map.setType(TY_ACC, TY_ACC)
                     state = -1
                 }
                 40 -> if (Util.isNumber(c)) {
-                    map.put(KYugaConstants.DT_YY, c)
+                    map.put(DT_YY, c)
                     state = 20
-                } else if (c.toInt() == KYugaConstants.CH_SPACE || c.toInt() == KYugaConstants.CH_COMA)
+                } else if (c.toInt() == CH_SPACE || c.toInt() == CH_COMA)
                     state = 40
                 else {
-                    map.type = KYugaConstants.TY_DTE
+                    map.type = TY_DTE
                     i -= 1
                     state = -1
                 }
@@ -849,9 +853,9 @@ object Kyuga {
                     Util.isNumber(c) -> {
                         map.append(c)
                     }
-                    c.toInt() == KYugaConstants.CH_SPACE -> state = 41
+                    c.toInt() == CH_SPACE -> state = 41
                     else -> {
-                        i = if (i - 1 > 0 && str[i - 1].toInt() == KYugaConstants.CH_SPACE)
+                        i = if (i - 1 > 0 && str[i - 1].toInt() == CH_SPACE)
                             i - 2
                         else
                             i - 1
@@ -861,7 +865,7 @@ object Kyuga {
                 42 //18=12 case, where 7-2209 was becoming amt as part of phn support
                 -> if (Util.isNumber(c)) {
                     map.append(c)
-                } else if (c.toInt() == KYugaConstants.CH_HYPH && i + 1 < str.length && Util.isNumber(str[i + 1])) {
+                } else if (c.toInt() == CH_HYPH && i + 1 < str.length && Util.isNumber(str[i + 1])) {
                     state = 39
                 } else {
                     i -= 1
@@ -869,24 +873,24 @@ object Kyuga {
                 }
                 43 //1234567890@ybl
                 -> if (Util.isLowerAlpha(c) || Util.isNumber(c)) {
-                    map.setType(KYugaConstants.TY_VPD, KYugaConstants.TY_VPD)
+                    map.setType(TY_VPD, TY_VPD)
                     map.append(delimiterStack.pop())
                     map.append(c)
                     state = 44
                 } else {
                     state = -1
                 }
-                44 -> if (Util.isLowerAlpha(c) || Util.isNumber(c) || c.toInt() == KYugaConstants.CH_FSTP) {
+                44 -> if (Util.isLowerAlpha(c) || Util.isNumber(c) || c.toInt() == CH_FSTP) {
                     map.append(c)
                     state = 44
                 } else
                     state = -1
                 45 -> if (Util.isNumber(c)) {
                     map.append(c)
-                } else if (c.toInt() == KYugaConstants.CH_HYPH && i + 1 < str.length && Util.isNumber(str[i + 1])) {
+                } else if (c.toInt() == CH_HYPH && i + 1 < str.length && Util.isNumber(str[i + 1])) {
                     state = 39
                 } else {
-                    i -= if (i - 1 > 0 && str[i - 1].toInt() == KYugaConstants.CH_COMA)
+                    i -= if (i - 1 > 0 && str[i - 1].toInt() == CH_COMA)
                         2
                     else
                         1
@@ -906,39 +910,39 @@ object Kyuga {
             i -= 1
         } else if (state == 36) {
             if (counter == 12 || Util.isNumber(str.substring(1, i)))
-                map.setType(KYugaConstants.TY_NUM, KYugaConstants.TY_NUM)
+                map.setType(TY_NUM, TY_NUM)
             else
                 return null
         }
 
-        if (map.type == KYugaConstants.TY_AMT) {
+        if (map.type == TY_AMT) {
             if (!map.contains(map.type!!) || map[map.type!!]!!.contains(".") && map[map.type!!]!!.split("\\.".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()[0].length > 8 || !map[map.type!!]!!.contains(
                     "."
                 ) && map[map.type!!]!!.length > 8
             )
-                map.setType(KYugaConstants.TY_NUM, KYugaConstants.TY_NUM)
+                map.setType(TY_NUM, TY_NUM)
         }
 
-        if (map.type == KYugaConstants.TY_NUM) {
-            if (i < str.length && str[i].isAlpha() && !config.containsKey(KYugaConstants.YUGA_SOURCE_CONTEXT)) {
+        if (map.type == TY_NUM) {
+            if (i < str.length && str[i].isAlpha() && !config.containsKey(YUGA_SOURCE_CONTEXT)) {
                 var j = i
                 while (j < str.length && str[j] != ' ')
                     j++
-                map.setType(KYugaConstants.TY_STR, KYugaConstants.TY_STR)
+                map.setType(TY_STR, TY_STR)
                 i = j
-            } else if (map[KYugaConstants.TY_NUM] != null) {
-                if (map[KYugaConstants.TY_NUM]!!.length == 10 && (map[KYugaConstants.TY_NUM]!![0] == '9' || map[KYugaConstants.TY_NUM]!![0] == '8' || map[KYugaConstants.TY_NUM]!![0] == '7'))
-                    map.setVal("num_class", KYugaConstants.TY_PHN)
-                else if (map[KYugaConstants.TY_NUM]!!.length == 12 && map[KYugaConstants.TY_NUM]!!.startsWith("91"))
-                    map.setVal("num_class", KYugaConstants.TY_PHN)
-                else if (map[KYugaConstants.TY_NUM]!!.length == 11 && map[KYugaConstants.TY_NUM]!!.startsWith("18"))
-                    map.setVal("num_class", KYugaConstants.TY_PHN)
-                else if (map[KYugaConstants.TY_NUM]!!.length == 11 && map[KYugaConstants.TY_NUM]!![0] == '0')
-                    map.setVal("num_class", KYugaConstants.TY_PHN)
+            } else if (map[TY_NUM] != null) {
+                if (map[TY_NUM]!!.length == 10 && (map[TY_NUM]!![0] == '9' || map[TY_NUM]!![0] == '8' || map[TY_NUM]!![0] == '7'))
+                    map.setVal("num_class", TY_PHN)
+                else if (map[TY_NUM]!!.length == 12 && map[TY_NUM]!!.startsWith("91"))
+                    map.setVal("num_class", TY_PHN)
+                else if (map[TY_NUM]!!.length == 11 && map[TY_NUM]!!.startsWith("18"))
+                    map.setVal("num_class", TY_PHN)
+                else if (map[TY_NUM]!!.length == 11 && map[TY_NUM]!![0] == '0')
+                    map.setVal("num_class", TY_PHN)
                 else
-                    map.setVal("num_class", KYugaConstants.TY_NUM)
+                    map.setVal("num_class", TY_NUM)
             }
-        } else if (map.type == KYugaConstants.TY_DTE && i + 1 < str.length) {
+        } else if (map.type == TY_DTE && i + 1 < str.length) {
             val `in` = i + skip(str.substring(i))
             val sub = str.substring(`in`)
             if (`in` < str.length) {
@@ -951,7 +955,7 @@ object Kyuga {
                     ) != null || Util.checkTypes(root, "FSA_DAYS", sub) != null
                 ) {
                     val kl = parseInternal(sub, config)
-                    if (kl != null && kl.b.type == KYugaConstants.TY_DTE) {
+                    if (kl != null && kl.b.type == TY_DTE) {
                         map.putAll(kl.b)
                         i = `in` + kl.a
                     }
@@ -964,7 +968,7 @@ object Kyuga {
                         ) != null)
                     ) {
                         val p_ = parseInternal(str.substring(iTime), config)
-                        if (p_ != null && p_.b.type == KYugaConstants.TY_DTE) {
+                        if (p_ != null && p_.b.type == TY_DTE) {
                             map.putAll(p_.b)
                             i = iTime + p_.a
                         }
@@ -977,7 +981,7 @@ object Kyuga {
                     i = `in` + 2
                 }
             }
-        } else if (map.type == KYugaConstants.TY_TMS) {
+        } else if (map.type == TY_TMS) {
             val v = map[map.type!!]
             if (v != null && v.length == 8 && Util.isHour(v[0], v[1]) && Util.isHour(v[4], v[5])) {
                 extractTime(v.substring(0, 4), map.getValMap(), "dept")
@@ -999,14 +1003,14 @@ object Kyuga {
         while (state > 0 && i < str.length) {
             c = str[i]
             when (state) {
-                1 -> if (c.toInt() == KYugaConstants.CH_SPACE || c.toInt() == KYugaConstants.CH_PLUS || Util.isNumber(c))
+                1 -> if (c.toInt() == CH_SPACE || c.toInt() == CH_PLUS || Util.isNumber(c))
                     state = 1
-                else if (c.toInt() == KYugaConstants.CH_COLN)
+                else if (c.toInt() == CH_COLN)
                     state = 2
                 else {
                     val s_ = str.substring(0, i).trim { it <= ' ' }
                     if (s_.length == 4 && Util.isNumber(s_)) {//we captured a year after IST Mon Sep 04 13:47:13 IST 2017
-                        map.put(KYugaConstants.DT_YYYY, s_)
+                        map.put(DT_YYYY, s_)
                         state = -2
                     } else
                         state = -1
@@ -1021,14 +1025,14 @@ object Kyuga {
                     4
                 else
                     -1
-                4 -> state = if (c.toInt() == KYugaConstants.CH_SPACE)
+                4 -> state = if (c.toInt() == CH_SPACE)
                     5
                 else
                     -2
                 5 -> {
                     val sy = str.substring(i, i + 4)
                     if (i + 3 < str.length && Util.isNumber(sy)) {
-                        map.put(KYugaConstants.DT_YYYY, sy)
+                        map.put(DT_YYYY, sy)
                         i += 3
                     }
                     state = -2
@@ -1039,7 +1043,7 @@ object Kyuga {
         val s_ = str.substring(0, i).trim { it <= ' ' }
         if (state == 1 && s_.length == 4 && Util.isNumber(s_))
         //we captured a year after IST Mon Sep 04 13:47:13 IST 2017
-            map.put(KYugaConstants.DT_YYYY, s_)
+            map.put(DT_YYYY, s_)
         return if (state == -1) 0 else i
     }
 
@@ -1073,35 +1077,35 @@ object Kyuga {
         val pFSAAmt =  Util.checkTypes(root, "FSA_AMT", subStr)
         val pFSATimes = Util.checkTypes(root, "FSA_TIMES", subStr)
 
-        if (c.toInt() == KYugaConstants.CH_FSTP) { //dot
-            if (i == 0 && config.containsKey(KYugaConstants.YUGA_SOURCE_CONTEXT) && config[KYugaConstants.YUGA_SOURCE_CONTEXT] == KYugaConstants.YUGA_SC_CURR)
-                map.setType(KYugaConstants.TY_AMT, KYugaConstants.TY_AMT)
+        if (c.toInt() == CH_FSTP) { //dot
+            if (i == 0 && config.containsKey(YUGA_SOURCE_CONTEXT) && config[YUGA_SOURCE_CONTEXT] == YUGA_SC_CURR)
+                map.setType(TY_AMT, TY_AMT)
             map.append(c)
             return 10
         } else if (c.toInt() == 42 || c.toInt() == 88 || c.toInt() == 120) {//*Xx
-            map.setType(KYugaConstants.TY_ACC, KYugaConstants.TY_ACC)
+            map.setType(TY_ACC, TY_ACC)
             map.append('X')
             return 11
-        } else if (c.toInt() == KYugaConstants.CH_COMA) { //comma
+        } else if (c.toInt() == CH_COMA) { //comma
             return 12
-        } else if (c.toInt() == KYugaConstants.CH_PCT || c.toInt() == KYugaConstants.CH_SPACE && i + 1 < str.length && str[i + 1].toInt() == KYugaConstants.CH_PCT) { //pct
-            map.setType(KYugaConstants.TY_PCT, KYugaConstants.TY_PCT)
+        } else if (c.toInt() == CH_PCT || c.toInt() == CH_SPACE && i + 1 < str.length && str[i + 1].toInt() == CH_PCT) { //pct
+            map.setType(TY_PCT, TY_PCT)
             return -1
-        } else if (c.toInt() == KYugaConstants.CH_PLUS) {
-            if (config.containsKey(KYugaConstants.YUGA_SOURCE_CONTEXT) && config[KYugaConstants.YUGA_SOURCE_CONTEXT] == KYugaConstants.YUGA_SC_CURR) {
+        } else if (c.toInt() == CH_PLUS) {
+            if (config.containsKey(YUGA_SOURCE_CONTEXT) && config[YUGA_SOURCE_CONTEXT] == YUGA_SC_CURR) {
                 return -1
             }
-            map.setType(KYugaConstants.TY_STR, KYugaConstants.TY_STR)
+            map.setType(TY_STR, TY_STR)
             return 36
         } else if (i > 0 && pFSAAmt != null) {
             map.index = pFSAAmt.a
-            map.setType(KYugaConstants.TY_AMT, KYugaConstants.TY_AMT)
+            map.setType(TY_AMT, TY_AMT)
             map.append(getAmt(pFSAAmt.b))
             return 38
         } else if (i > 0 && pFSATimes != null) {
             val ind = i + pFSATimes.a
             map.index = ind
-            map.setType(KYugaConstants.TY_TME, null)
+            map.setType(TY_TME, null)
             var s = str.substring(0, i)
             if (pFSATimes.b == "mins")
                 s = "00$s"
@@ -1137,7 +1141,7 @@ object Kyuga {
         var c: Char
         for (i in index until str.length) {
             c = str[i]
-            if (c.toInt() == KYugaConstants.CH_FSTP) {
+            if (c.toInt() == CH_FSTP) {
             } else return if (c.toInt() == 42 || c.toInt() == 88 || c.toInt() == 120 || Util.isNumber(c))
                 i
             else

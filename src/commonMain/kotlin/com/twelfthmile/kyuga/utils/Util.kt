@@ -24,15 +24,15 @@ object Util {
     }
 
     fun isDateOperator(c: Char): Boolean {
-        return c.toInt() == KYugaConstants.CH_SLSH || c.toInt() == KYugaConstants.CH_HYPH || c.toInt() == KYugaConstants.CH_SPACE
+        return c.toInt() == CH_SLSH || c.toInt() == CH_HYPH || c.toInt() == CH_SPACE
     }
 
     fun isDelimiter(c: Char): Boolean {
-        return c.toInt() == KYugaConstants.CH_SPACE || c.toInt() == KYugaConstants.CH_FSTP || c.toInt() == KYugaConstants.CH_COMA || c.toInt() == KYugaConstants.CH_RBKT
+        return c.toInt() == CH_SPACE || c.toInt() == CH_FSTP || c.toInt() == CH_COMA || c.toInt() == CH_RBKT
     }
 
     fun isTimeOperator(c: Char): Boolean {
-        return c.toInt() == KYugaConstants.CH_COLN //colon
+        return c.toInt() == CH_COLN //colon
     }
 
     fun checkTypes(root: RootTrie, type: String, word: String): Pair<Int, String>? {
@@ -52,7 +52,7 @@ object Util {
     }
 
     fun isTypeEnd(ch: Char): Boolean {
-        return isNumber(ch) || ch.toInt() == KYugaConstants.CH_FSTP || ch.toInt() == KYugaConstants.CH_SPACE || ch.toInt() == KYugaConstants.CH_HYPH || ch.toInt() == KYugaConstants.CH_COMA || ch.toInt() == KYugaConstants.CH_SLSH || ch.toInt() == KYugaConstants.CH_RBKT || ch.toInt() == KYugaConstants.CH_PLUS || ch.toInt() == KYugaConstants.CH_STAR || ch == '\r' || ch == '\n' || ch == '\''
+        return isNumber(ch) || ch.toInt() == CH_FSTP || ch.toInt() == CH_SPACE || ch.toInt() == CH_HYPH || ch.toInt() == CH_COMA || ch.toInt() == CH_SLSH || ch.toInt() == CH_RBKT || ch.toInt() == CH_PLUS || ch.toInt() == CH_STAR || ch == '\r' || ch == '\n' || ch == '\''
     }
 
     fun isAlpha(c: Char): Boolean {

@@ -1,0 +1,16 @@
+publishing {
+    repositories {
+        maven {
+            url  = project.projectBintrayRepo
+        }
+    }
+
+    publications {
+        mavenProject(MavenPublication) {
+            groupId project.groupId
+            artifactId project.projectBintrayArtifactName
+            version project.kyugaVersion
+            withPom(pom)
+        }
+    }
+}

@@ -27,7 +27,7 @@ class KyugaTestTests: XCTestCase {
 //        print(formatDatetoDefault(inputDate: NSDate()))
 //        print(formatDateToEnglishLocale(inputDate: formatDatetoDefault(inputDate: NSDate())))
         let yuga = Kyuga.init()
-        let response: Response = yuga.parse(str: "09:40 PM May 21, 2017")!
+        let response: Response = yuga.parse(str: "05.06.2018")!
         print("----------------------------------->>>")
         print(response.dateStr!)
         print("----------------------------------->>>")
