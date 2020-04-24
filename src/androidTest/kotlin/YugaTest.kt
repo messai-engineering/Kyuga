@@ -55,14 +55,6 @@ class YugaTest {
     }
 
     @Test
-    fun `on tokenise - message with phone no - should tokenise no`() {
-        val sms = "Sometime phone numbers are representations of one own self agony like 04862 217129 and 9618134706"
-        val tokenizedMessage = Kyuga.tokenize(sms)
-        assertEquals("Sometime phone numbers are representations of one own self agony like PHONENUM and PHONENUM",
-            tokenizedMessage)
-    }
-
-    @Test
     fun `on tokenise - message with web url - should tokenise url`() {
         val sms = "Sometime urls numbers are representations of one own self like http: // seventyseven.com and https://amazon.in"
         val tokenizedMessage = Kyuga.tokenize(sms)
