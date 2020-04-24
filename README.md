@@ -27,26 +27,26 @@ val date: Date = response.getDate();
 
 Please read [CONTRIBUTING.md](https://gist.github.com/johnjoseph/b6aeea8ff859964ac325896bf9eeb2c7) for details on our code of conduct, and the process for submitting pull requests to us.
 
-## Releases
+## Latest Releases
 
-* 0.0.1
+* 0.0.2
     * common
       
        [ ![Download](https://api.bintray.com/packages/messai/maven/kyuga/images/download.svg) ](https://bintray.com/messai/maven/kyuga/_latestVersion)
       ```groovy
-      implementation "in.messai.kyuga:kyuga:0.0.1"
+      implementation "in.messai.kyuga:kyuga:0.0.2"
       ```
     * android
     
        [ ![Download](https://api.bintray.com/packages/messai/maven/kyuga/images/download.svg) ](https://bintray.com/messai/maven/kyuga/_latestVersion)
       ```groovy
-      implementation "in.messai.kyuga:kyuga-android:0.0.1"
+      implementation "in.messai.kyuga:kyuga-android:0.0.2"
       ```
     * iOS
         
        [ ![Download](https://api.bintray.com/packages/messai/maven/kyuga/images/download.svg) ](https://bintray.com/messai/maven/kyuga/_latestVersion)
       ```groovy
-      implementation "in.messai.kyuga:kyuga-ios:0.0.1"
+      implementation "in.messai.kyuga:kyuga-ios:0.0.2"
       ```
 ## Versioning
 
