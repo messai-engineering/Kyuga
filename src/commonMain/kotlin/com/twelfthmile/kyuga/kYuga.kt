@@ -85,15 +85,19 @@ object Kyuga {
         val candidateTokens = cleanMessage
             .split(TOKENIZE_REGEX)
             .map { it.trim() }
-        val tokens  = tokenise(candidateTokens)
-        return tokens.filterIndexed { index, it ->
-            if (it.isNotEmpty()) {
-                if (index > 0)
-                    candidateTokens[index - 1] != it
-                else
-                    true
-            } else
-                false
+        return try {
+            val tokens = tokenise(candidateTokens)
+            tokens.filterIndexed { index, it ->
+                if (it.isNotEmpty()) {
+                    if (index > 0)
+                        candidateTokens[index - 1] != it
+                    else
+                        true
+                } else
+                    false
+            }
+        } catch (e: Exception) {
+            candidateTokens
         }.joinToString(" ")
     }
 
