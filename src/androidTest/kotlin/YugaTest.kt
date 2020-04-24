@@ -46,6 +46,30 @@ class YugaTest {
         println(tokens)
     }
 
+    @Test
+    fun `on tokenise - message with email - should tokenise email`() {
+        val sms = "Sometime emails are representations of one own self loath like madness@rethtomail.com and killer@gmail.in"
+        val tokenizedMessage = Kyuga.tokenize(sms)
+        assertEquals("Sometime emails are representations of one own self loath like EMAILADDR and EMAILADDR",
+            tokenizedMessage)
+    }
+
+    @Test
+    fun `on tokenise - message with phone no - should tokenise no`() {
+        val sms = "Sometime phone numbers are representations of one own self agony like 04862 217129 and 9618134706"
+        val tokenizedMessage = Kyuga.tokenize(sms)
+        assertEquals("Sometime phone numbers are representations of one own self agony like PHONENUM and PHONENUM",
+            tokenizedMessage)
+    }
+
+    @Test
+    fun `on tokenise - message with web url - should tokenise url`() {
+        val sms = "Sometime urls numbers are representations of one own self like http: // seventyseven.com and https://amazon.in"
+        val tokenizedMessage = Kyuga.tokenize(sms)
+        assertEquals("Sometime urls numbers are representations of one own self like http: // URL and URL",
+            tokenizedMessage)
+    }
+
     private fun getTestResources(): JSONArray {
         val inputs = YugaTest::class.java.getResource("yuga_test_data.json")
             .readText()
