@@ -80,13 +80,14 @@ object Kyuga {
 
     fun tokenize(message: String): String {
         val cleanMessage = message
-            .replace(EMAIL_ADDRESS, "EMAILADDR")
-            .replace(PHONE, "PHONENUM")
-            .replace(WEB_URL, "URL")
+            .replace(EMAIL_ADDRESS, " EMAILADDR ")
+            .replace(PHONE, " PHONENUM ")
+            .replace(WEB_URL, " URL ")
         val candidateTokens = cleanMessage
             .split(TOKENIZE_REGEX)
             .map { it.trim() }
-        return candidateTokens.filterIndexed { index, it ->
+        val tokens  = tokenise(candidateTokens)
+        return tokens.filterIndexed { index, it ->
             if (it.isNotEmpty()) {
                 if (index > 0)
                     candidateTokens[index - 1] != it
