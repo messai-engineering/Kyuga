@@ -3,6 +3,9 @@ package com.twelfthmile.kyuga
 import com.twelfthmile.kyuga.expectations.MultDate
 import com.twelfthmile.kyuga.expectations.formatDateDefault
 import com.twelfthmile.kyuga.expectations.log
+import com.twelfthmile.kyuga.regex.EMAIL_ADDRESS
+import com.twelfthmile.kyuga.regex.PHONE
+import com.twelfthmile.kyuga.regex.WEB_URL
 import com.twelfthmile.kyuga.types.GenTrie
 import com.twelfthmile.kyuga.types.Pair
 import com.twelfthmile.kyuga.types.Response
@@ -10,6 +13,7 @@ import com.twelfthmile.kyuga.types.RootTrie
 import com.twelfthmile.kyuga.utils.*
 
 fun Char.isAlpha(): Boolean = this in 'a'..'z' || this in 'A'..'Z'
+private val TOKENIZE_REGEX = "[. ]".toRegex()
 
 object Kyuga {
 
@@ -71,9 +75,26 @@ object Kyuga {
 
     fun tokenise(message: List<String>): List<String> = message.map {
         val parseResponse = parse(it)
-        parseResponse?.let { pr ->
-            pr.type
-        } ?: it
+        parseResponse?.type ?: it
+    }
+
+    fun tokenize(message: String): String {
+        val cleanMessage = message
+            .replace(EMAIL_ADDRESS, "EMAILADDR")
+            .replace(PHONE, "PHONENUM")
+            .replace(WEB_URL, "URL")
+        val candidateTokens = cleanMessage
+            .split(TOKENIZE_REGEX)
+            .map { it.trim() }
+        return candidateTokens.filterIndexed { index, it ->
+            if (it.isNotEmpty()) {
+                if (index > 0)
+                    candidateTokens[index - 1] != it
+                else
+                    true
+            } else
+                false
+        }.joinToString(" ")
     }
 
     /**
@@ -122,7 +143,7 @@ object Kyuga {
     private fun getResponse(str: String, config: Map<String, String>): Response? {
         val p = parseInternal(str, config) ?: return null
         val (a, b) = prepareResult(str, p, config)!!
-        return when(b) {
+        return when (b) {
             is MultDate -> Response(a, p.b.getValMap(), b, p.a)
             is String -> Response(a, p.b.getValMap(), b, p.a)
             else -> throw IllegalArgumentException("Error while creating response")
@@ -176,7 +197,7 @@ object Kyuga {
                     p.b.type?.let { map[map.type!!]?.let { tg -> Pair<String, Any>(it, tg) } }
                 }
             } else
-                p.b.type?.let {  Pair<String, Any>(it, str.substring(0, index)) }
+                p.b.type?.let { Pair<String, Any>(it, str.substring(0, index)) }
 
         }
     }
@@ -212,7 +233,8 @@ object Kyuga {
                         map.setType(TY_DTE, null)
                         map.put(DT_MMM, it.b)
                         i += it.a
-                    true} == true) {
+                        true
+                    } == true) {
                     state = 33
                 } else if (Util.checkTypes(root, "FSA_DAYS", str.substring(i))?.let {
                         map.setType(TY_DTE, null)
@@ -432,7 +454,7 @@ object Kyuga {
                     map.put(TY_AMT, map[TY_AMT]!!.replace("X".toRegex(), ""))
                     map.append(c)
                     state = 10
-                } else if (c.toInt() == CH_FSTP&& lookAheadForInstr(str, i).let {
+                } else if (c.toInt() == CH_FSTP && lookAheadForInstr(str, i).let {
                         if (it > 0) {
                             i = it
                             true
@@ -473,7 +495,7 @@ object Kyuga {
                             }
                         }
                     }
-                    if(tempBrk) {
+                    if (tempBrk) {
                         i -= 1
                         state = -1
                     }
@@ -533,7 +555,8 @@ object Kyuga {
                     state = -1
                 } else {//this is just a number, not a date
                     //to cater to 16 -Nov -17
-                    if (delimiterStack.pop().toInt() == CH_SPACE && c.toInt() == CH_HYPH && i + 1 < str.length && (Util.isNumber(
+                    if (delimiterStack.pop()
+                            .toInt() == CH_SPACE && c.toInt() == CH_HYPH && i + 1 < str.length && (Util.isNumber(
                             str[i + 1]
                         ) || checkMonthType(str, i + 1) != null)
                     ) {
@@ -684,7 +707,8 @@ object Kyuga {
                         map.setType(TY_NUM, TY_NUM)
                     }
                     map.append(c)
-                    if ((delimiterStack.pop().toInt() == CH_SLSH || delimiterStack.pop().toInt() == CH_HYPH) && i + 1 < str.length && Util.isNumber(
+                    if ((delimiterStack.pop().toInt() == CH_SLSH || delimiterStack.pop()
+                            .toInt() == CH_HYPH) && i + 1 < str.length && Util.isNumber(
                             str[i + 1]
                         ) && (i + 2 == str.length || Util.isDelimiter(str[i + 2]))
                     ) {//flight time 0820/0950
@@ -746,10 +770,10 @@ object Kyuga {
                     state = -1
                 }
                 32 -> if (checkMonthType(str, i)?.let {
-                    map.put(DT_MMM, it.b)
-                    i += it.a
-                    true
-                } == true) {
+                        map.put(DT_MMM, it.b)
+                        i += it.a
+                        true
+                    } == true) {
                     state = 24
                 } else if (c.toInt() == CH_COMA || c.toInt() == CH_SPACE)
                     state = 32
@@ -916,7 +940,8 @@ object Kyuga {
         }
 
         if (map.type == TY_AMT) {
-            if (!map.contains(map.type!!) || map[map.type!!]!!.contains(".") && map[map.type!!]!!.split("\\.".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()[0].length > 8 || !map[map.type!!]!!.contains(
+            if (!map.contains(map.type!!) || map[map.type!!]!!.contains(".") && map[map.type!!]!!.split("\\.".toRegex())
+                    .dropLastWhile { it.isEmpty() }.toTypedArray()[0].length > 8 || !map[map.type!!]!!.contains(
                     "."
                 ) && map[map.type!!]!!.length > 8
             )
@@ -1074,7 +1099,7 @@ object Kyuga {
         val c = str[i]
         val subStr = str.substring(i)
 
-        val pFSAAmt =  Util.checkTypes(root, "FSA_AMT", subStr)
+        val pFSAAmt = Util.checkTypes(root, "FSA_AMT", subStr)
         val pFSATimes = Util.checkTypes(root, "FSA_TIMES", subStr)
 
         if (c.toInt() == CH_FSTP) { //dot
@@ -1133,7 +1158,7 @@ object Kyuga {
         m?.let {
             val gps = it.groups
             valMap[pre + "time"] =
-                gps[1]?.value.toString() + if (it.groups.size > 1 && gps[2] != null) ":" + gps[2]?.value.toString()  else ":00"
+                gps[1]?.value.toString() + if (it.groups.size > 1 && gps[2] != null) ":" + gps[2]?.value.toString() else ":00"
         }
     }
 
