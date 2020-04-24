@@ -81,7 +81,6 @@ object Kyuga {
     fun tokenize(message: String): String {
         val cleanMessage = message
             .replace(EMAIL_ADDRESS, " EMAILADDR ")
-            .replace(PHONE, " PHONENUM ")
             .replace(WEB_URL, " URL ")
         val candidateTokens = cleanMessage
             .split(TOKENIZE_REGEX)
