@@ -90,7 +90,7 @@ object Kyuga {
             tokens.filterIndexed { index, it ->
                 if (it.isNotEmpty()) {
                     if (index > 0)
-                        candidateTokens[index - 1] != it
+                        tokens[index - 1] != it
                     else
                         true
                 } else

@@ -2,22 +2,22 @@
 def pomConfig = {
     licenses {
         license {
-            name "The Apache Software License, Version 2.0"
-            url "http://www.apache.org/licenses/LICENSE-2.0.txt"
+            name "MIT"
+            url "https://opensource.org/licenses/MIT"
             distribution "repo"
         }
     }
     developers {
         developer {
-            id developerId
-            name developerName
-            organization developerOrganisation
-            organizationUrl developerOrganisationUrl
+            id project.developerId
+            name project.developerName
+            organization project.developerOrganisation
+            organizationUrl project.developerOrganisationUrl
         }
     }
 
     scm {
-        url projectGithubUrl
+        url project.projectGithubUrl
     }
 }
 

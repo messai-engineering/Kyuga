@@ -66,7 +66,7 @@ class YugaTest {
     fun `on tokenise - valid sms - should tokenize`() {
         val validSms = "INR 7,980.00 Dr to A/c No XX2471 towards SI HDFC177126215 BSES Rajdhani -02/10/17 Val 03-OCT-17. Clr Bal INR 8,822.69."
         val tokenized = Kyuga.tokenize(validSms)
-        assertEquals("INR NUM NUM Dr to A/c No INSTRNO towards SI HDFC177126215 BSES Rajdhani AMT Val DATE Clr Bal INR NUM NUM", tokenized)
+        assertEquals("INR NUM Dr to A/c No INSTRNO towards SI HDFC177126215 BSES Rajdhani AMT Val DATE Clr Bal INR NUM", tokenized)
     }
 
     private fun getTestResources(): JSONArray {
