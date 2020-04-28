@@ -53,7 +53,7 @@ const val CH_PLUS = 43
 const val CH_ATRT = 64
 const val CH_RBKT = 41
 const val CH_STAR = 42
-
+const val CH_UNSC = 95
 const val CH_LSBT = 91
 
 const val INDEX = "INDEX"

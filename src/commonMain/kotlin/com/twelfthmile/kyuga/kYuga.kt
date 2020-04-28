@@ -75,7 +75,10 @@ object Kyuga {
 
     fun tokenise(message: List<String>): List<String> = message.map {
         val parseResponse = parse(it)
-        parseResponse?.type ?: it
+        parseResponse?.type ?: when (Util.checkForId(it)) {
+            true -> if (it != "URL" && it != "EMAILADDR") "IDVAL" else it
+            false -> it
+        }
     }
 
     fun tokenize(message: String): String {
