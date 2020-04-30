@@ -82,8 +82,7 @@ object Util {
                 1 -> if (isNumber(c) || isAlpha(c)) {
                     when {
                         isUpperAlpha(c) -> haveSeenUpper = true
-                        isLowerAlpha(c) -> haveSeenLower =
-                            true
+                        isLowerAlpha(c) -> haveSeenLower = true
                         else -> haveSeenNumber = true
                     }
                     sb.append(c)
@@ -103,9 +102,7 @@ object Util {
             i++
         }
         val validID = if (haveSeenUpper) {
-            if (!haveSeenNumber) {
-                !haveSeenLower
-            } else true
+            haveSeenNumber
         } else {
             if (!haveSeenNumber) false else {
                 haveSeenLower
