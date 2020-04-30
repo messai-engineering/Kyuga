@@ -89,7 +89,7 @@ object Kyuga {
             .split(TOKENIZE_REGEX)
             .map { it.trim() }
         return try {
-            val tokens = tokenise(candidateTokens)
+            val tokens = tokenise(candidateTokens).filter { it.isNotBlank() }
             tokens.filterIndexed { index, it ->
                 if (it.isNotEmpty()) {
                     if (index > 0)
