@@ -11,5 +11,5 @@ actual fun getMaxDateYear(): Long {
     val calender = NSCalendar.currentCalendar
     val unitFlags = NSYearCalendarUnit or NSMonthCalendarUnit or NSDayCalendarUnit
     val components = calender.components(unitFlags, currentDate)
-    return components.year
+    return components.year.toLong()
 }

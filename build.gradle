@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.tasks.FatFrameworkTask
+
 buildscript {
     repositories {
         google()
@@ -31,15 +33,45 @@ repositories {
 group project.groupId
 version project.kyugaVersion
 
+def frameworkName = "KyugaIOS"
+
 kotlin {
 
-    targets {
-        final def iOSTarget = System.getenv('SDK_NAME')?.startsWith("iphoneos") \
-                              ? presets.iosArm64 : presets.iosX64
+    iosX64 {
+        binaries.framework {
+            baseName = frameworkName
+        }
+    }
 
-        fromPreset(iOSTarget, 'ios') {
+    iosArm64 {
+        binaries.framework {
+            baseName = frameworkName
+        }
+    }
+
+    iosArm32 {
+        binaries.framework {
+            baseName = frameworkName
+        }
+    }
+
+    targets {
+
+        fromPreset(presets.iosX64, 'iosX64') {
             binaries {
-                framework('KyugaIOS')
+                framework(frameworkName)
+            }
+        }
+
+        fromPreset(presets.iosArm64, 'iosArm64') {
+            binaries {
+                framework(frameworkName)
+            }
+        }
+
+        fromPreset(presets.iosArm32, 'iosArm32') {
+            binaries {
+                framework(frameworkName)
             }
         }
 
@@ -82,6 +114,16 @@ kotlin {
 
         iosMain.dependencies {
         }
+
+        iosMain {}
+        iosArm64Main.dependsOn iosMain
+        iosArm32Main.dependsOn iosMain
+        iosX64Main.dependsOn iosMain
+
+        iosTest {}
+        iosArm64Test.dependsOn iosTest
+        iosArm32Test.dependsOn iosTest
+        iosX64Test.dependsOn iosTest
     }
 }
 
@@ -89,27 +131,19 @@ configurations {
     compileClasspath
 }
 
-task packForXcode(type: Sync) {
-    final File frameworkDir = new File(buildDir, "xcode-frameworks")
-    final String mode = project.findProperty("XCODE_CONFIGURATION")?.toUpperCase() ?: 'DEBUG'
-    final def framework = kotlin.targets.ios.binaries.getFramework("KyugaIOS", mode)
-
-    inputs.property "mode", mode
-    dependsOn framework.linkTask
-
-    from { framework.outputFile.parentFile }
-    into frameworkDir
-
-    doLast {
-        new File(frameworkDir, 'gradlew').with {
-            text = "#!/bin/bash\nexport 'JAVA_HOME=${System.getProperty("java.home")}'\ncd '${rootProject.rootDir}'\n./gradlew \$@\n"
-            setExecutable(true)
-        }
-    }
+task fatFramework(type: FatFrameworkTask) {
+    // The fat framework must have the same base name as the initial frameworks.
+    baseName = "$frameworkName"
+    // Specify the frameworks to be merged.
+    from(
+            kotlin.targets.iosX64.binaries.getFramework("RELEASE") ,
+            kotlin.targets.iosArm64.binaries.getFramework("RELEASE"),
+            kotlin.targets.iosArm32.binaries.getFramework("RELEASE")
+    )
 }
 
 apply from: rootProject.file('pom.gradle')
 apply from: rootProject.file('gradle/bintray.gradle')
 apply from: rootProject.file('gradle/publish.gradle')
 
-tasks.build.dependsOn packForXcode
+tasks.build.dependsOn fatFramework
