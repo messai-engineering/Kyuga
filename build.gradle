@@ -55,28 +55,7 @@ kotlin {
         }
     }
 
-    targets {
-
-        fromPreset(presets.iosX64, 'iosX64') {
-            binaries {
-                framework(frameworkName)
-            }
-        }
-
-        fromPreset(presets.iosArm64, 'iosArm64') {
-            binaries {
-                framework(frameworkName)
-            }
-        }
-
-        fromPreset(presets.iosArm32, 'iosArm32') {
-            binaries {
-                framework(frameworkName)
-            }
-        }
-
-        fromPreset(presets.jvm, 'android')
-    }
+    jvm('android')
 
     sourceSets {
         commonMain {
