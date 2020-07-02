@@ -2,10 +2,10 @@ import org.jetbrains.kotlin.gradle.tasks.FatFrameworkTask
 
 buildscript {
     repositories {
+        mavenLocal()
         google()
         mavenCentral()
         jcenter()
-        mavenLocal()
         maven { url 'https://dl.bintray.com/kotlin/kotlin-dev' }
         maven { url 'https://dl.bintray.com/kotlin/kotlin-eap' }
         maven { url "https://dl.bintray.com/jetbrains/kotlin-native-dependencies" }
