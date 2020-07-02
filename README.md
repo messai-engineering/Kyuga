@@ -29,30 +29,30 @@ Please read [CONTRIBUTING.md](https://gist.github.com/johnjoseph/b6aeea8ff859964
 
 ## Latest Releases
 
-* 0.0.7
+* 0.1.0
     * common
       
        [ ![Download](https://api.bintray.com/packages/messai/maven/kyuga/images/download.svg) ](https://bintray.com/messai/maven/kyuga/_latestVersion)
       ```groovy
-      implementation "in.messai.kyuga:kyuga:0.0.7"
+      implementation "in.messai.kyuga:kyuga:0.1.0"
       ```
     * android
     
        [ ![Download](https://api.bintray.com/packages/messai/maven/kyuga/images/download.svg) ](https://bintray.com/messai/maven/kyuga/_latestVersion)
       ```groovy
-      implementation "in.messai.kyuga:kyuga-android:0.0.7"
+      implementation "in.messai.kyuga:kyuga-android:0.1.0"
       ```
     * iOS
         
        [ ![Download](https://api.bintray.com/packages/messai/maven/kyuga/images/download.svg) ](https://bintray.com/messai/maven/kyuga/_latestVersion)
       ```groovy
-      implementation "in.messai.kyuga:kyuga-iosx64:0.0.7"
+      implementation "in.messai.kyuga:kyuga-iosx64:0.1.0"
       ```
       ```groovy
-      implementation "in.messai.kyuga:kyuga-iosarm64:0.0.7"
+      implementation "in.messai.kyuga:kyuga-iosarm64:0.1.0"
       ```
       ```groovy
-      implementation "in.messai.kyuga:kyuga-iosarm32:0.0.7"
+      implementation "in.messai.kyuga:kyuga-iosarm32:0.1.0"
       ```
 ## Versioning
 
