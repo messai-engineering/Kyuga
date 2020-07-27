@@ -4,8 +4,6 @@ import com.twelfthmile.kyuga.expectations.MultDate
 import com.twelfthmile.kyuga.expectations.formatDateDefault
 import com.twelfthmile.kyuga.expectations.log
 import com.twelfthmile.kyuga.regex.EMAIL_ADDRESS
-import com.twelfthmile.kyuga.regex.PHONE
-import com.twelfthmile.kyuga.regex.WEB_URL
 import com.twelfthmile.kyuga.types.GenTrie
 import com.twelfthmile.kyuga.types.Pair
 import com.twelfthmile.kyuga.types.Response
@@ -13,7 +11,7 @@ import com.twelfthmile.kyuga.types.RootTrie
 import com.twelfthmile.kyuga.utils.*
 
 fun Char.isAlpha(): Boolean = this in 'a'..'z' || this in 'A'..'Z'
-private val TOKENIZE_REGEX = "[. ]".toRegex()
+private val TOKENIZE_REGEX by lazy {  "[. ]".toRegex() }
 
 object Kyuga {
 

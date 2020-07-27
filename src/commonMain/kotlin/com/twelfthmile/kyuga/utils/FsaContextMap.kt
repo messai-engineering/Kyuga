@@ -1,7 +1,6 @@
 package com.twelfthmile.kyuga.utils
 
 import com.twelfthmile.kyuga.expectations.*
-import com.twelfthmile.kyuga.utils.*
 
 class FsaContextMap {
 
