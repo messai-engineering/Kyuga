@@ -6,16 +6,11 @@ buildscript {
         google()
         mavenCentral()
         jcenter()
-        maven { url 'https://dl.bintray.com/kotlin/kotlin-dev' }
-        maven { url 'https://dl.bintray.com/kotlin/kotlin-eap' }
-        maven { url "https://dl.bintray.com/jetbrains/kotlin-native-dependencies" }
     }
     dependencies {
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
         classpath "org.jetbrains.kotlin:kotlin-allopen:$kotlin_version"
-        classpath "org.jetbrains.kotlin:kotlin-frontend-plugin:0.0.37"
         classpath group: 'net.rubygrapefruit', name: 'native-platform', version: '0.21'
-        classpath "com.jfrog.bintray.gradle:gradle-bintray-plugin:1.8.4-jetbrains-3"
     }
 }
 
@@ -24,7 +19,6 @@ plugins {
 }
 
 apply plugin: 'maven-publish'
-apply plugin: 'com.jfrog.bintray'
 
 repositories {
     mavenCentral()
@@ -122,7 +116,6 @@ task fatFramework(type: FatFrameworkTask) {
 }
 
 apply from: rootProject.file('pom.gradle')
-apply from: rootProject.file('gradle/bintray.gradle')
 apply from: rootProject.file('gradle/publish.gradle')
 
 tasks.build.dependsOn fatFramework
