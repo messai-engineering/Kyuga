@@ -4,12 +4,7 @@ import com.twelfthmile.kyuga.expectations.MultDate
 import com.twelfthmile.kyuga.expectations.formatDateDefault
 import com.twelfthmile.kyuga.expectations.log
 import com.twelfthmile.kyuga.regex.EMAIL_ADDRESS
-import com.twelfthmile.kyuga.regex.PHONE
-import com.twelfthmile.kyuga.regex.WEB_URL
-import com.twelfthmile.kyuga.types.GenTrie
-import com.twelfthmile.kyuga.types.Pair
-import com.twelfthmile.kyuga.types.Response
-import com.twelfthmile.kyuga.types.RootTrie
+import com.twelfthmile.kyuga.types.*
 import com.twelfthmile.kyuga.utils.*
 
 fun Char.isAlpha(): Boolean = this in 'a'..'z' || this in 'A'..'Z'
@@ -17,60 +12,13 @@ private val TOKENIZE_REGEX = "[. ]".toRegex()
 
 object Kyuga {
 
-    private val D_DEBUG = false
+    private val D_DEBUG = true
 
     private val root: RootTrie
         get() = LazyHolder.root
 
     private object LazyHolder {
-        internal var root = createRoot()
-    }
-
-    private fun createRoot(): RootTrie {
-        val root = RootTrie()
-        root.next["FSA_MONTHS"] = GenTrie()
-        root.next["FSA_DAYS"] = GenTrie()
-        root.next["FSA_TIMEPRFX"] = GenTrie()
-        root.next["FSA_AMT"] = GenTrie()
-        root.next["FSA_TIMES"] = GenTrie()
-        root.next["FSA_TZ"] = GenTrie()
-        root.next["FSA_DAYSFFX"] = GenTrie()
-        root.next["FSA_UPI"] = GenTrie()
-        seeding(FSA_MONTHS, root.next["FSA_MONTHS"])
-        seeding(FSA_DAYS, root.next["FSA_DAYS"])
-        seeding(FSA_TIMEPRFX, root.next["FSA_TIMEPRFX"])
-        seeding(FSA_AMT, root.next["FSA_AMT"])
-        seeding(FSA_TIMES, root.next["FSA_TIMES"])
-        seeding(FSA_TZ, root.next["FSA_TZ"])
-        seeding(FSA_DAYSFFX, root.next["FSA_DAYSFFX"])
-        seeding(FSA_UPI, root.next["FSA_UPI"])
-        return root
-    }
-
-    private fun seeding(type: String, root: GenTrie?) {
-        var t: GenTrie?
-        var c = 0
-        for (fsaCldr in type.split(",").toTypedArray()) {
-            c++
-            t = root
-            val len = fsaCldr.length
-            var i = 0
-            while (i < len) {
-                val ch = fsaCldr[i]
-                t!!.child = true
-                if (!t.next.containsKey(ch)) t.next[ch] = GenTrie()
-                t = t.next[ch]
-                if (i == len - 1) {
-                    t!!.leaf = true
-                    t.token = fsaCldr.replace(";", "")
-                } else if (i < len - 1 && fsaCldr[i + 1].toInt() == 59) { //semicolon
-                    t!!.leaf = true
-                    t.token = fsaCldr.replace(";", "")
-                    i++ //to skip semicolon
-                }
-                i++
-            }
-        }
+        var root = KyugaTrie().root
     }
 
     fun tokenise(message: List<String>): List<String> = message.map {
@@ -150,8 +98,8 @@ object Kyuga {
         val p = parseInternal(str, config) ?: return null
         val (a, b) = prepareResult(str, p, config)!!
         return when (b) {
-            is MultDate -> Response(a, p.b.getValMap(), b, p.a)
-            is String -> Response(a, p.b.getValMap(), b, p.a)
+            is MultDate -> Response(a, p.second.getValMap(), b, p.first)
+            is String -> Response(a, p.second.getValMap(), b, p.first)
             else -> throw IllegalArgumentException("Error while creating response")
         }
     }
@@ -174,8 +122,8 @@ object Kyuga {
         p: Pair<Int, FsaContextMap>,
         config: Map<String, String>
     ): Pair<String, Any>? {
-        val index = p.a
-        val map = p.b
+        val index = p.first
+        val map = p.second
         if (map.type == TY_DTE) {
             if (map.contains(DT_MMM) && map.size() < 3)
             //may fix
@@ -192,7 +140,7 @@ object Kyuga {
             }
             val d = map.getDate(config)
             return if (d != null)
-                p.b.type?.let { Pair<String, Any>(it, d) }
+                p.second.type?.let { Pair<String, Any>(it, d) }
             else
                 Pair(TY_STR, str.substring(0, index))
         } else {
@@ -200,10 +148,10 @@ object Kyuga {
                 if (map.type == TY_ACC && config.containsKey(YUGA_SOURCE_CONTEXT) && config[YUGA_SOURCE_CONTEXT] == YUGA_SC_CURR) {
                     Pair<String, Any>(TY_AMT, map[map.type!!]!!.replace("X".toRegex(), ""))
                 } else {
-                    p.b.type?.let { map[map.type!!]?.let { tg -> Pair<String, Any>(it, tg) } }
+                    p.second.type?.let { map[map.type!!]?.let { tg -> Pair<String, Any>(it, tg) } }
                 }
             } else
-                p.b.type?.let { Pair<String, Any>(it, str.substring(0, index)) }
+                p.second.type?.let { Pair<String, Any>(it, str.substring(0, index)) }
 
         }
     }
@@ -237,15 +185,15 @@ object Kyuga {
                     state = 2
                 } else if (Util.checkTypes(root, "FSA_MONTHS", str.substring(i))?.let {
                         map.setType(TY_DTE, null)
-                        map.put(DT_MMM, it.b)
-                        i += it.a
+                        map.put(DT_MMM, it.second)
+                        i += it.first
                         true
                     } == true) {
                     state = 33
                 } else if (Util.checkTypes(root, "FSA_DAYS", str.substring(i))?.let {
                         map.setType(TY_DTE, null)
-                        map.put(DT_DD, it.b)
-                        i += it.a
+                        map.put(DT_DD, it.second)
+                        i += it.first
                         true
                     } == true) {
                     state = 30
@@ -275,8 +223,8 @@ object Kyuga {
                     state = 16
                 } else if (checkMonthType(str, i)?.let {
                         map.setType(TY_DTE, DT_D)
-                        map.put(DT_MMM, it.b)
-                        i += it.a
+                        map.put(DT_MMM, it.second)
+                        i += it.first
                         true
                     } == true) {
                     state = 24
@@ -298,14 +246,14 @@ object Kyuga {
                     state = 16
                 } else if (checkMonthType(str, i)?.let {
                         map.setType(TY_DTE, DT_D)
-                        map.put(DT_MMM, it.b)
-                        i += it.a
+                        map.put(DT_MMM, it.second)
+                        i += it.first
                         true
                     } == true) {
                     state = 24
                 } else if (Util.checkTypes(root, "FSA_DAYSFFX", str.substring(i))?.let {
                         map.setType(TY_DTE, DT_D)
-                        i += it.a
+                        i += it.first
                         true
                     } == true) {
                     state = 32
@@ -337,7 +285,7 @@ object Kyuga {
                     i += 1
                     state = -1
                 } else if (Util.checkTypes(root, "FSA_TIMES", str.substring(i))?.let {
-                        i += it.a
+                        i += it.first
                         true
                     } == true) {
                     state = -1
@@ -364,7 +312,7 @@ object Kyuga {
                             map.put(DT_HH, (hh + 12).toString())
                         i = i + 1
                     } else if (Util.checkTypes(root, "FSA_TIMES", str.substring(i))?.let {
-                            i += it.a
+                            i += it.first
                             true
                         } == true) {
                         // emptiness
@@ -540,8 +488,8 @@ object Kyuga {
                 } else if (c.toInt() == CH_SPACE || c.toInt() == CH_COMA)
                     state = 16
                 else if (checkMonthType(str, i)?.let {
-                        map.put(DT_MMM, it.b)
-                        i += it.a
+                        map.put(DT_MMM, it.second)
+                        i += it.first
                         true
                     } == true) {
                     state = 24
@@ -552,10 +500,10 @@ object Kyuga {
                 } else if (i > 0 && Util.checkTypes(root, "FSA_TIMES", str.substring(i))?.let {
                         map.setType(TY_TME, null)
                         var s = str.substring(0, i)
-                        if (it.b == "mins" || it.b == "minutes")
+                        if (it.second == "mins" || it.second == "minutes")
                             s = "00$s"
                         extractTime(s, map.getValMap())
-                        i += it.a
+                        i += it.first
                         true
                     } == true) {
                     state = -1
@@ -685,10 +633,10 @@ object Kyuga {
                 } else if (i > 0 && Util.checkTypes(root, "FSA_TIMES", str.substring(i))?.let {
                         map.setType(TY_TME, null)
                         var s = str.substring(0, i)
-                        if (it.b == "mins")
+                        if (it.second == "mins")
                             s = "00$s"
                         extractTime(s, map.getValMap())
-                        i += it.a
+                        i += it.first
                         true
                     } == true) {
                     state = -1
@@ -764,8 +712,8 @@ object Kyuga {
                     map.append(c)
                     state = 32
                 } else if (checkMonthType(str, i)?.let {
-                        map.put(DT_MMM, it.b)
-                        i += it.a
+                        map.put(DT_MMM, it.second)
+                        i += it.first
                         true
                     } == true) {
                     state = 24
@@ -776,15 +724,15 @@ object Kyuga {
                     state = -1
                 }
                 32 -> if (checkMonthType(str, i)?.let {
-                        map.put(DT_MMM, it.b)
-                        i += it.a
+                        map.put(DT_MMM, it.second)
+                        i += it.first
                         true
                     } == true) {
                     state = 24
                 } else if (c.toInt() == CH_COMA || c.toInt() == CH_SPACE)
                     state = 32
                 else if (Util.checkTypes(root, "FSA_DAYSFFX", str.substring(i))?.let {
-                        i += it.a
+                        i += it.first
                         true
                     } == true) {
                     state = 32
@@ -986,12 +934,12 @@ object Kyuga {
                     ) != null || Util.checkTypes(root, "FSA_DAYS", sub) != null
                 ) {
                     val kl = parseInternal(sub, config)
-                    if (kl != null && kl.b.type == TY_DTE) {
-                        map.putAll(kl.b)
-                        i = `in` + kl.a
+                    if (kl != null && kl.second.type == TY_DTE) {
+                        map.putAll(kl.second)
+                        i = `in` + kl.first
                     }
                 } else if (pFSATimePrex != null) {
-                    val iTime = `in` + pFSATimePrex.a + 1 + skip(str.substring(`in` + pFSATimePrex.a + 1))
+                    val iTime = `in` + pFSATimePrex.first + 1 + skip(str.substring(`in` + pFSATimePrex.first + 1))
                     if (iTime < str.length && (Util.isNumber(str[iTime]) || Util.checkTypes(
                             root,
                             "FSA_DAYS",
@@ -999,14 +947,14 @@ object Kyuga {
                         ) != null)
                     ) {
                         val p_ = parseInternal(str.substring(iTime), config)
-                        if (p_ != null && p_.b.type == TY_DTE) {
-                            map.putAll(p_.b)
-                            i = iTime + p_.a
+                        if (p_ != null && p_.second.type == TY_DTE) {
+                            map.putAll(p_.second)
+                            i = iTime + p_.first
                         }
                     }
                 } else if (pFSATz != null) {
-                    val j = skipForTZ(str.substring(`in` + pFSATz.a + 1), map)
-                    i = `in` + pFSATz.a + 1 + j
+                    val j = skipForTZ(str.substring(`in` + pFSATz.first + 1), map)
+                    i = `in` + pFSATz.first + 1 + j
                 } else if (sub.toLowerCase().startsWith("pm") || sub.toLowerCase().startsWith("am")) {
                     //todo handle appropriately for pm
                     i = `in` + 2
@@ -1129,16 +1077,16 @@ object Kyuga {
             map.setType(TY_STR, TY_STR)
             return 36
         } else if (i > 0 && pFSAAmt != null) {
-            map.index = pFSAAmt.a
+            map.index = pFSAAmt.first
             map.setType(TY_AMT, TY_AMT)
-            map.append(getAmt(pFSAAmt.b))
+            map.append(getAmt(pFSAAmt.second))
             return 38
         } else if (i > 0 && pFSATimes != null) {
-            val ind = i + pFSATimes.a
+            val ind = i + pFSATimes.first
             map.index = ind
             map.setType(TY_TME, null)
             var s = str.substring(0, i)
-            if (pFSATimes.b == "mins")
+            if (pFSATimes.second == "mins")
                 s = "00$s"
             extractTime(s, map.getValMap())
             return 38

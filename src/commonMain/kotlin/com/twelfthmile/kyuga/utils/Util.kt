@@ -1,7 +1,5 @@
 package com.twelfthmile.kyuga.utils
 
-import com.twelfthmile.kyuga.types.GenTrie
-import com.twelfthmile.kyuga.types.Pair
 import com.twelfthmile.kyuga.types.RootTrie
 
 object Util {
@@ -37,18 +35,18 @@ object Util {
 
     fun checkTypes(root: RootTrie, type: String, word: String): Pair<Int, String>? {
         var i = 0
-        var t: GenTrie? = root.next[type] ?: return null
+        var t = root.next[type] ?: return null
         while (i < word.length) {
             val ch = word[i]
-            if (t != null && t.leaf && !t.next.containsKey(ch) && isTypeEnd(ch))
-                return t.token?.let { tkn -> Pair<Int, String>(i - 1, tkn) }
-            if (t != null && t.child && t.next.containsKey(ch)) {
-                t = t.next[ch]
+            if (t.leaf && !t.next.containsKey(ch) && isTypeEnd(ch))
+                return t.token?.let { tkn -> Pair(i - 1, tkn) }
+            if (t.child && t.next.containsKey(ch)) {
+                t = t.next[ch] ?: throw IllegalStateException("If check done, cannot be null")
             } else
                 break
             i++
         }
-        return if (t != null && t.leaf && i == word.length) t.token?.let { tkn -> Pair(i - 1, tkn) } else null
+        return if (t.leaf && i == word.length) t.token?.let { tkn -> Pair(i - 1, tkn) } else null
     }
 
     private fun isTypeEnd(ch: Char): Boolean {
