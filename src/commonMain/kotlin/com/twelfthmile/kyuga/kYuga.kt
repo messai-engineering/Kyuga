@@ -4,6 +4,8 @@ import com.twelfthmile.kyuga.expectations.MultDate
 import com.twelfthmile.kyuga.expectations.formatDateDefault
 import com.twelfthmile.kyuga.expectations.log
 import com.twelfthmile.kyuga.regex.EMAIL_ADDRESS
+import com.twelfthmile.kyuga.states.*
+import com.twelfthmile.kyuga.model.StateContext
 import com.twelfthmile.kyuga.types.*
 import com.twelfthmile.kyuga.utils.*
 
@@ -156,7 +158,7 @@ object Kyuga {
         }
     }
 
-    private fun generateDefaultConfig(): Map<String, String> {
+    fun generateDefaultConfig(): Map<String, String> {
         val config = mutableMapOf<String, String>()
         config[YUGA_CONF_DATE] = formatDateDefault(MultDate())
         return config
@@ -178,701 +180,229 @@ object Kyuga {
         var counter = 0
         while (state > 0 && i < str.length) {
             c = str[i]
+            fun getStateContext() = StateContext(root, str, c, map, i, delimiterStack, config, counter)
             when (state) {
-                1 -> if (Util.isNumber(c)) {
-                    map.setType(TY_NUM, null)
-                    map.put(TY_NUM, c)
-                    state = 2
-                } else if (Util.checkTypes(root, "FSA_MONTHS", str.substring(i))?.let {
-                        map.setType(TY_DTE, null)
-                        map.put(DT_MMM, it.second)
-                        i += it.first
-                        true
-                    } == true) {
-                    state = 33
-                } else if (Util.checkTypes(root, "FSA_DAYS", str.substring(i))?.let {
-                        map.setType(TY_DTE, null)
-                        map.put(DT_DD, it.second)
-                        i += it.first
-                        true
-                    } == true) {
-                    state = 30
-                } else if (c.toInt() == CH_HYPH) {//it could be a negative number
-                    state = 37
-                } else if (c.toInt() == CH_LSBT) {//it could be an OTP
-                    state = 1
-                } else {
-                    state = accAmtNumPct(str, i, map, config)
-                    if (map.type == null)
-                        return null
-                    if (state == -1 && map.type != TY_PCT) {
-                        i -= 1
-                    }
-                }
+                1 -> state1(getStateContext())?.let {
+                    state = it.state
+                    i = it.index
+                } ?: return null
 
-                2 -> if (Util.isNumber(c)) {
-                    map.append(c)
-                    state = 3
-                } else if (Util.isTimeOperator(c)) {
-                    delimiterStack.push(c)
-                    map.setType(TY_DTE, DT_HH)
-                    state = 4
-                } else if (Util.isDateOperator(c) || c.toInt() == CH_COMA) {
-                    delimiterStack.push(c)
-                    map.setType(TY_DTE, DT_D)
-                    state = 16
-                } else if (checkMonthType(str, i)?.let {
-                        map.setType(TY_DTE, DT_D)
-                        map.put(DT_MMM, it.second)
-                        i += it.first
-                        true
-                    } == true) {
-                    state = 24
-                } else {
-                    state = accAmtNumPct(str, i, map, config)
-                    if (state == -1 && map.type != TY_PCT)
-                        i -= 1
+                2 -> state2(getStateContext()).let {
+                    state = it.state
+                    i = it.index
                 }
-                3 -> if (Util.isNumber(c)) {
-                    map.append(c)
-                    state = 8
-                } else if (Util.isTimeOperator(c)) {
-                    delimiterStack.push(c)
-                    map.setType(TY_DTE, DT_HH)
-                    state = 4
-                } else if (Util.isDateOperator(c) || c.toInt() == CH_COMA) {
-                    delimiterStack.push(c)
-                    map.setType(TY_DTE, DT_D)
-                    state = 16
-                } else if (checkMonthType(str, i)?.let {
-                        map.setType(TY_DTE, DT_D)
-                        map.put(DT_MMM, it.second)
-                        i += it.first
-                        true
-                    } == true) {
-                    state = 24
-                } else if (Util.checkTypes(root, "FSA_DAYSFFX", str.substring(i))?.let {
-                        map.setType(TY_DTE, DT_D)
-                        i += it.first
-                        true
-                    } == true) {
-                    state = 32
-                } else {
-                    state = accAmtNumPct(str, i, map, config)
-                    if (state == -1 && map.type != TY_PCT)
-                        i -= 1
+                3 -> state3(getStateContext()).let {
+                    state = it.state
+                    i = it.index
                 }
                 4 //hours to mins
-                -> if (Util.isNumber(c)) {
-                    map.upgrade(c)//hh to mm
-                    state = 5
-                } else { //saw a colon randomly, switch back to num from hours
-                    if (!map.contains(DT_MMM))
-                        map.setType(TY_NUM, TY_NUM)
-                    i -= 2 //move back so that colon is omitted
-                    state = -1
+                -> state4(getStateContext()).let {
+                    state = it.state
+                    i = it.index
                 }
-                5 -> if (Util.isNumber(c)) {
-                    map.append(c)
-                    state = 5
-                } else if (c.toInt() == CH_COLN)
-                    state = 6
-                else if (c == 'a' && i + 1 < str.length && str[i + 1] == 'm') {
-                    i += 1
-                    state = -1
-                } else if (c == 'p' && i + 1 < str.length && str[i + 1] == 'm') {
-                    map.put(DT_HH, (map[DT_HH]!!.toInt() + 12).toString())
-                    i += 1
-                    state = -1
-                } else if (Util.checkTypes(root, "FSA_TIMES", str.substring(i))?.let {
-                        i += it.first
-                        true
-                    } == true) {
-                    state = -1
-                } else
-                    state = 7
+                5 -> state5(getStateContext()).let {
+                    state = it.state
+                    i = it.index
+                }
                 6 //for seconds
-                -> if (Util.isNumber(c)) {
-                    map.upgrade(c)
-                    if (i + 1 < str.length && Util.isNumber(str[i + 1]))
-                        map.append(str[i + 1])
-                    i = i + 1
-                    state = -1
-                } else
-                    state = -1
-                7 -> {
-                    if (c == 'a' && i + 1 < str.length && str[i + 1] == 'm') {
-                        i = i + 1
-                        val hh = map[DT_HH]!!.toInt()
-                        if (hh == 12)
-                            map.put(DT_HH, 0.toString())
-                    } else if (c == 'p' && i + 1 < str.length && str[i + 1] == 'm') {
-                        val hh = map[DT_HH]!!.toInt()
-                        if (hh != 12)
-                            map.put(DT_HH, (hh + 12).toString())
-                        i = i + 1
-                    } else if (Util.checkTypes(root, "FSA_TIMES", str.substring(i))?.let {
-                            i += it.first
-                            true
-                        } == true) {
-                        // emptiness
-                    } else
-                        i -= 2
-                    state = -1
+                -> state6(getStateContext()).let {
+                    state = it.state
+                    i = it.index
                 }
-                8 -> if (Util.isNumber(c)) {
-                    map.append(c)
-                    state = 9
-                } else {
-                    state = accAmtNumPct(str, i, map, config)
-                    if (c.toInt() == CH_SPACE && state == -1 && i + 1 < str.length && Util.isNumber(str[i + 1]))
-                        state = 12
-                    else if (c.toInt() == CH_HYPH && state == -1 && i + 1 < str.length && Util.isNumber(str[i + 1]))
-                        state = 45
-                    else if (state == -1 && map.type != TY_PCT)
-                        i = i - 1
+                7 -> state7(getStateContext()).let {
+                    state = it.second
+                    i = it.first
                 }
-                9 -> if (Util.isDateOperator(c)) {
-                    delimiterStack.push(c)
-                    state = 25
-                } else if (Util.isNumber(c)) {
-                    map.append(c)
-                    counter = 5
-                    state = 15
-                } else {
-                    state = accAmtNumPct(str, i, map, config)
-                    if (state == -1 && map.type != TY_PCT) {//NUM
-                        i = i - 1
-                    }
+                8 -> state8(getStateContext()).let {
+                    state = it.second
+                    i = it.first
+                }
+                9 -> state9(getStateContext()).let {
+                    state = it.state
+                    i = it.index
+                    counter = it.counter
                 }//handle for num case
-                10 -> if (Util.isNumber(c)) {
-                    map.append(c)
-                    map.setType(TY_AMT, TY_AMT)
-                    state = 14
-                } else { //saw a fullstop randomly
-                    map.pop()//remove the dot which was appended
-                    i = i - 2
-                    state = -1
+                10 -> state10(getStateContext()).let {
+                    state = it.state
+                    i = it.index
+                    counter = it.counter
                 }
-                11 -> if (c.toInt() == 42 || c.toInt() == 88 || c.toInt() == 120)
-                //*Xx
-                    map.append('X')
-                else if (c.toInt() == CH_HYPH)
-                    state = 11
-                else if (Util.isNumber(c)) {
-                    map.append(c)
-                    state = 13
-                } else if (c == ' ' && i + 1 < str.length && (str[i + 1].toInt() == 42 || str[i + 1].toInt() == 88 || str[i + 1].toInt() == 120 || Util.isNumber(
-                        str[i + 1]
-                    ))
-                )
-                    state = 11
-                else if (c.toInt() == CH_FSTP && lookAheadForInstr(str, i).let {
-                        if (it > 0) {
-                            i = it
-                            true
-                        } else {
-                            false
-                        }
-                    }) {
-                    // emptiness
-                } else {
-                    i -= 1
-                    state = -1
+                11 -> state11(getStateContext()).let {
+                    state = it.state
+                    i = it.index
+                    counter = it.counter
                 }
-                12 -> if (Util.isNumber(c)) {
-                    map.setType(TY_AMT, TY_AMT)
-                    map.append(c)
-                } else if (c.toInt() == CH_COMA)
-                //comma
-                    state = 12
-                else if (c.toInt() == CH_FSTP) { //dot
-                    map.append(c)
-                    state = 10
-                } else if (c.toInt() == CH_HYPH && i + 1 < str.length && Util.isNumber(str[i + 1])) {
-                    state = 39
-                } else {
-                    if (i - 1 > 0 && str[i - 1].toInt() == CH_COMA)
-                        i = i - 2
-                    else
-                        i = i - 1
-                    state = -1
+                12 -> state12(getStateContext()).let {
+                    state = it.state
+                    i = it.index
+                    counter = it.counter
                 }
-                13 -> if (Util.isNumber(c))
-                    map.append(c)
-                else if (c.toInt() == 42 || c.toInt() == 88 || c.toInt() == 120)
-                //*Xx
-                    map.append('X')
-                else if (c.toInt() == CH_FSTP && config.containsKey(YUGA_SOURCE_CONTEXT) && config[YUGA_SOURCE_CONTEXT] == YUGA_SC_CURR) { //LIC **150.00 fix
-                    map.setType(TY_AMT, TY_AMT)
-                    map.put(TY_AMT, map[TY_AMT]!!.replace("X".toRegex(), ""))
-                    map.append(c)
-                    state = 10
-                } else if (c.toInt() == CH_FSTP && lookAheadForInstr(str, i).let {
-                        if (it > 0) {
-                            i = it
-                            true
-                        } else {
-                            false
-                        }
-                    }) {
-                    // emptiness
-                } else {
-                    i = i - 1
-                    state = -1
+                13 -> state13(getStateContext()).let {
+                    state = it.state
+                    i = it.index
+                    counter = it.counter
                 }
-                14 -> if (Util.isNumber(c)) {
-                    map.append(c)
-                } else if (c.toInt() == CH_PCT) {
-                    map.setType(TY_PCT, TY_PCT)
-                    state = -1
-                } else if ((c == 'k' || c == 'c') && i + 1 < str.length && str[i + 1] == 'm') {
-                    map.setType(TY_DST, TY_DST)
-                    i += 1
-                    state = -1
-                } else if ((c == 'k' || c == 'm') && i + 1 < str.length && str[i + 1] == 'g') {
-                    map.setType(TY_WGT, TY_WGT)
-                    i += 1
-                    state = -1
-                } else {
-                    var tempBrk = true
-                    if (c.toInt() == CH_FSTP && i + 1 < str.length && Util.isNumber(str[i + 1])) {
-                        val samt = map[map.type!!]
-                        if (samt!!.contains(".")) {
-                            val samtarr = samt.split("\\.".toRegex())
-                            if (samtarr.size == 2) {
-                                map.type = TY_DTE
-                                map.put(DT_D, samtarr[0])
-                                map.put(DT_MM, samtarr[1])
-                                state = 19
-                                tempBrk = false
-                            }
-                        }
-                    }
-                    if (tempBrk) {
-                        i -= 1
-                        state = -1
-                    }
+                14 -> state14(getStateContext()).let {
+                    state = it.state
+                    i = it.index
+                    counter = it.counter
                 }
-                15 -> if (Util.isNumber(c)) {
-                    counter++
-                    map.append(c)
-                } else if (c.toInt() == CH_COMA)
-                //comma
-                    state = 12
-                else if (c.toInt() == CH_FSTP) { //dot
-                    map.append(c)
-                    state = 10
-                } else if ((c.toInt() == 42 || c.toInt() == 88 || c.toInt() == 120) && i + 1 < str.length && (Util.isNumber(
-                        str[i + 1]
-                    ) || str[i + 1].toInt() == CH_HYPH || str[i + 1].toInt() == 42 || str[i + 1].toInt() == 88 || str[i + 1].toInt() == 120)
-                ) {//*Xx
-                    map.setType(TY_ACC, TY_ACC)
-                    map.append('X')
-                    state = 11
-                } else if (c.toInt() == CH_SPACE && i + 2 < str.length && Util.isNumber(str[i + 1]) && Util.isNumber(
-                        str[i + 2]
-                    )
-                ) {
-                    state = 41
-                } else {
-                    i = i - 1
-                    state = -1
-                }//                    else if (c == Constants.CH_ATRT) {
-                //                        delimiterStack.push(c);
-                //                        state = 43;
-                //                    }
-                16 -> if (Util.isNumber(c)) {
-                    map.upgrade(c)
-                    state = 17
-                } else if (c.toInt() == CH_SPACE || c.toInt() == CH_COMA)
-                    state = 16
-                else if (checkMonthType(str, i)?.let {
-                        map.put(DT_MMM, it.second)
-                        i += it.first
-                        true
-                    } == true) {
-                    state = 24
-                } else if (c.toInt() == CH_FSTP) { //dot
-                    map.setType(TY_NUM, TY_NUM)
-                    map.append(c)
-                    state = 10
-                } else if (i > 0 && Util.checkTypes(root, "FSA_TIMES", str.substring(i))?.let {
-                        map.setType(TY_TME, null)
-                        var s = str.substring(0, i)
-                        if (it.second == "mins" || it.second == "minutes")
-                            s = "00$s"
-                        extractTime(s, map.getValMap())
-                        i += it.first
-                        true
-                    } == true) {
-                    state = -1
-                } else {//this is just a number, not a date
-                    //to cater to 16 -Nov -17
-                    if (delimiterStack.pop()
-                            .toInt() == CH_SPACE && c.toInt() == CH_HYPH && i + 1 < str.length && (Util.isNumber(
-                            str[i + 1]
-                        ) || checkMonthType(str, i + 1) != null)
-                    ) {
-                        state = 16
-                    } else {
-                        map.setType(TY_NUM, TY_NUM)
-                        var j = i
-                        while (!Util.isNumber(str[j]))
-                            j--
-                        i = j
-                        state = -1
-                    }
+                15 -> state15(getStateContext()).let {
+                    state = it.state
+                    i = it.index
+                    counter = it.counter
+                }
+                16 -> state16(getStateContext()).let {
+                    state = it.state
+                    i = it.index
+                    counter = it.counter
                 }//we should handle amt case, where comma led to 16 as opposed to 12
-                17 -> if (Util.isNumber(c)) {
-                    map.append(c)
-                    state = 18
-                } else if (Util.isDateOperator(c)) {
-                    delimiterStack.push(c)
-                    state = 19
-                } else if (c.toInt() == CH_COMA && delimiterStack.pop().toInt() == CH_COMA) { //comma
-                    map.setType(TY_NUM, TY_NUM)
-                    state = 12
-                } else if (c.toInt() == CH_FSTP && delimiterStack.pop().toInt() == CH_COMA) { //dot
-                    map.setType(TY_NUM, TY_NUM)
-                    map.append(c)
-                    state = 10
-                } else {
-                    map.setType(TY_STR, TY_STR)
-                    i = i - 1
-                    state = -1
+                17 -> state17(getStateContext()).let {
+                    state = it.state
+                    i = it.index
+                    counter = it.counter
                 }//we should handle amt case, where comma led to 16,17 as opposed to 12
-                18 -> if (Util.isDateOperator(c)) {
-                    delimiterStack.push(c)
-                    state = 19
-                } else if (Util.isNumber(c) && delimiterStack.pop().toInt() == CH_COMA) {
-                    map.setType(TY_NUM, TY_NUM)
-                    state = 12
-                    map.append(c)
-                } else if (Util.isNumber(c) && delimiterStack.pop().toInt() == CH_HYPH) {
-                    map.setType(TY_NUM, TY_NUM)
-                    state = 42
-                    map.append(c)
-                } else if (c.toInt() == CH_COMA && delimiterStack.pop().toInt() == CH_COMA) { //comma
-                    map.setType(TY_NUM, TY_NUM)
-                    state = 12
-                } else if (c.toInt() == CH_FSTP && delimiterStack.pop().toInt() == CH_COMA) { //dot
-                    map.setType(TY_NUM, TY_NUM)
-                    map.append(c)
-                    state = 10
-                } else if (c.toInt() == CH_FSTP && map.contains(DT_D) && map.contains(DT_MM)) { //dot
-                    state = -1
-                } else {
-                    map.setType(TY_STR, TY_STR)
-                    i = i - 1
-                    state = -1
+                18 -> state18(getStateContext()).let {
+                    state = it.state
+                    i = it.index
+                    counter = it.counter
                 }//we should handle amt case, where comma led to 16,17 as opposed to 12
                 19 //year
-                -> if (Util.isNumber(c)) {
-                    map.upgrade(c)
-                    state = 20
-                } else {
-                    i = i - 2
-                    state = -1
+                -> state19(getStateContext()).let {
+                    state = it.state
+                    i = it.index
+                    counter = it.counter
                 }
                 20 //year++
-                -> if (Util.isNumber(c)) {
-                    map.append(c)
-                    state = 21
-                } else if (c == ':') {
-                    if (map.contains(DT_YY))
-                        map.convert(DT_YY, DT_HH)
-                    else if (map.contains(DT_YYYY))
-                        map.convert(DT_YYYY, DT_HH)
-                    state = 4
-                } else {
-                    map.remove(DT_YY)//since there is no one number year
-                    i = i - 1
-                    state = -1
+                -> state20(getStateContext()).let {
+                    state = it.state
+                    i = it.index
+                    counter = it.counter
                 }
-                21 -> if (Util.isNumber(c)) {
-                    map.upgrade(c)
-                    state = 22
-                } else if (c == ':') {
-                    if (map.contains(DT_YY))
-                        map.convert(DT_YY, DT_HH)
-                    else if (map.contains(DT_YYYY))
-                        map.convert(DT_YYYY, DT_HH)
-                    state = 4
-                } else {
-                    i = i - 1
-                    state = -1
+                21 -> state21(getStateContext()).let {
+                    state = it.state
+                    i = it.index
+                    counter = it.counter
                 }
-                22 -> if (Util.isNumber(c)) {
-                    map.append(c)
-                    state = -1
-                } else {
-                    map.remove(DT_YYYY)//since there is no three number year
-                    i = i - 1
-                    state = -1
+                22 -> state22(getStateContext()).let {
+                    state = it.state
+                    i = it.index
+                    counter = it.counter
                 }
-                24 -> if (Util.isDateOperator(c) || c.toInt() == CH_COMA) {
-                    delimiterStack.push(c)
-                    state = 24
-                } else if (Util.isNumber(c)) {
-                    map.upgrade(c)
-                    state = 20
-                } else if (c.toInt() == CH_SQOT && i + 1 < str.length && Util.isNumber(str[i + 1])) {
-                    state = 24
-                } else if (c == '|') {
-                    state = 24
-                } else {
-                    i = i - 1
-                    state = -1
+                24 -> state24(getStateContext()).let {
+                    state = it.state
+                    i = it.index
+                    counter = it.counter
                 }
                 25//potential year start comes here
-                -> if (Util.isNumber(c)) {
-                    map.setType(TY_DTE, DT_YYYY)
-                    map.put(DT_MM, c)
-                    state = 26
-                } else if (i > 0 && Util.checkTypes(root, "FSA_TIMES", str.substring(i))?.let {
-                        map.setType(TY_TME, null)
-                        var s = str.substring(0, i)
-                        if (it.second == "mins")
-                            s = "00$s"
-                        extractTime(s, map.getValMap())
-                        i += it.first
-                        true
-                    } == true) {
-                    state = -1
-                } else {
-                    //it wasn't year, it was just a number
-                    i = i - 2
-                    state = -1
+                -> state25(getStateContext()).let {
+                    state = it.state
+                    i = it.index
+                    counter = it.counter
                 }
-                26 -> if (Util.isNumber(c)) {
-                    map.append(c)
-                    state = 27
-                } else {
-                    map.setType(TY_STR, TY_STR)
-                    i = i - 1
-                    state = -1
+                26 -> state26(getStateContext()).let {
+                    state = it.state
+                    i = it.index
+                    counter = it.counter
                 }
-                27 -> if (Util.isDateOperator(c)) {
-                    delimiterStack.push(c)
-                    state = 28
-                } else if (Util.isNumber(c)) {//it was a number, most probably telephone number
-                    if (map.type == TY_DTE) {
-                        map.setType(TY_NUM, TY_NUM)
-                    }
-                    map.append(c)
-                    if ((delimiterStack.pop().toInt() == CH_SLSH || delimiterStack.pop()
-                            .toInt() == CH_HYPH) && i + 1 < str.length && Util.isNumber(
-                            str[i + 1]
-                        ) && (i + 2 == str.length || Util.isDelimiter(str[i + 2]))
-                    ) {//flight time 0820/0950
-                        map.setType(TY_TMS, TY_TMS)
-                        map.append(str[i + 1])
-                        i = i + 1
-                        state = -1
-                    } else if (delimiterStack.pop().toInt() == CH_SPACE) {
-                        state = 41
-                    } else
-                        state = 12
-                } else if (c.toInt() == 42 || c.toInt() == 88 || c.toInt() == 120) {//*Xx
-                    map.setType(TY_ACC, TY_ACC)
-                    map.append('X')
-                    state = 11
-                } else {
-                    map.setType(TY_STR, TY_STR)
-                    i = i - 1
-                    state = -1
+                27 -> state27(getStateContext()).let {
+                    state = it.state
+                    i = it.index
+                    counter = it.counter
                 }
-                28 -> if (Util.isNumber(c)) {
-                    map.put(DT_D, c)
-                    state = 29
-                } else {
-                    map.setType(TY_STR, TY_STR)
-                    i = i - 2
-                    state = -1
+                28 -> state28(getStateContext()).let {
+                    state = it.state
+                    i = it.index
+                    counter = it.counter
                 }
-                29 -> {
-                    if (Util.isNumber(c)) {
-                        map.append(c)
-                    } else
-                        i = i - 1
-                    state = -1
+                29 -> state29(getStateContext()).let {
+                    state = it.state
+                    i = it.index
+                    counter = it.counter
                 }
-                30 -> if (c.toInt() == CH_COMA || c.toInt() == CH_SPACE)
-                    state = 30
-                else if (Util.isNumber(c)) {
-                    map.put(DT_D, c)
-                    state = 31
-                } else {
-                    map.type = TY_DTE
-                    i = i - 1
-                    state = -1
+                30 -> state30(getStateContext()).let {
+                    state = it.state
+                    i = it.index
+                    counter = it.counter
                 }
-                31 -> if (Util.isNumber(c)) {
-                    map.append(c)
-                    state = 32
-                } else if (checkMonthType(str, i)?.let {
-                        map.put(DT_MMM, it.second)
-                        i += it.first
-                        true
-                    } == true) {
-                    state = 24
-                } else if (c.toInt() == CH_COMA || c.toInt() == CH_SPACE)
-                    state = 32
-                else {
-                    i = i - 1
-                    state = -1
+                31 -> state31(getStateContext()).let {
+                    state = it.state
+                    i = it.index
+                    counter = it.counter
                 }
-                32 -> if (checkMonthType(str, i)?.let {
-                        map.put(DT_MMM, it.second)
-                        i += it.first
-                        true
-                    } == true) {
-                    state = 24
-                } else if (c.toInt() == CH_COMA || c.toInt() == CH_SPACE)
-                    state = 32
-                else if (Util.checkTypes(root, "FSA_DAYSFFX", str.substring(i))?.let {
-                        i += it.first
-                        true
-                    } == true) {
-                    state = 32
-                } else {
-                    var j = i
-                    while (!Util.isNumber(str[j]))
-                        j--
-                    i = j
-                    state = -1
+                32 -> state32(getStateContext()).let {
+                    state = it.state
+                    i = it.index
+                    counter = it.counter
                 }
-                33 -> if (Util.isNumber(c)) {
-                    map.put(DT_D, c)
-                    state = 34
-                } else if (c.toInt() == CH_SPACE || c.toInt() == CH_COMA || c.toInt() == CH_HYPH)
-                    state = 33
-                else {
-                    map.type = TY_DTE
-                    i -= 1
-                    state = -1
+                33 -> state33(getStateContext()).let {
+                    state = it.state
+                    i = it.index
+                    counter = it.counter
                 }
-                34 -> if (Util.isNumber(c)) {
-                    map.append(c)
-                    state = 35
-                } else if (c.toInt() == CH_SPACE || c.toInt() == CH_COMA)
-                    state = 35
-                else {
-                    map.type = TY_DTE
-                    i -= 1
-                    state = -1
+                34 -> state34(getStateContext()).let {
+                    state = it.state
+                    i = it.index
+                    counter = it.counter
                 }
-                35 -> if (Util.isNumber(c)) {
-                    if (i > 1 && Util.isNumber(str[i - 1])) {
-                        map.convert(DT_D, DT_YYYY)
-                        map.append(c)
-                    } else
-                        map.put(DT_YY, c)
-                    state = 20
-                } else if (c.toInt() == CH_SPACE || c.toInt() == CH_COMA)
-                    state = 40
-                else {
-                    map.type = TY_DTE
-                    i -= 1
-                    state = -1
+                35 -> state35(getStateContext()).let {
+                    state = it.state
+                    i = it.index
+                    counter = it.counter
                 }
-                36 -> if (Util.isNumber(c)) {
-                    map.append(c)
-                    counter++
-                } else if (c.toInt() == CH_FSTP && i + 1 < str.length && Util.isNumber(str[i + 1])) {
-                    map.append(c)
-                    state = 10
-                } else if (c.toInt() == CH_HYPH && i + 1 < str.length && Util.isNumber(str[i + 1])) {
-                    delimiterStack.push(c)
-                    map.append(c)
-                    state = 16
-                } else {
-                    if (counter == 12 || Util.isNumber(str.substring(1, i)))
-                        map.setType(TY_NUM, TY_NUM)
-                    else
-                        return null
-                    state = -1
+                36 -> state36(getStateContext())?.let {
+                    state = it.state
+                    i = it.index
+                    counter = it.counter
+                } ?: return null
+                37 -> state37(getStateContext()).let {
+                    state = it.state
+                    i = it.index
+                    counter = it.counter
                 }
-                37 -> if (Util.isNumber(c)) {
-                    map.setType(TY_AMT, TY_AMT)
-                    map.put(TY_AMT, '-')
-                    map.append(c)
-                    state = 12
-                } else if (c.toInt() == CH_FSTP) {
-                    map.put(TY_AMT, '-')
-                    map.append(c)
-                    state = 10
-                } else
-                    state = -1
-                38 -> {
-                    i = map.index!!
-                    state = -1
+                38 -> state38(getStateContext()).let {
+                    state = it.state
+                    i = it.index
+                    counter = it.counter
                 }
                 39//instrno
-                -> if (Util.isNumber(c))
-                    map.append(c)
-                else {
-                    map.setType(TY_ACC, TY_ACC)
-                    state = -1
+                -> state39(getStateContext()).let {
+                    state = it.state
+                    i = it.index
+                    counter = it.counter
                 }
-                40 -> if (Util.isNumber(c)) {
-                    map.put(DT_YY, c)
-                    state = 20
-                } else if (c.toInt() == CH_SPACE || c.toInt() == CH_COMA)
-                    state = 40
-                else {
-                    map.type = TY_DTE
-                    i -= 1
-                    state = -1
+                40 -> state40(getStateContext()).let {
+                    state = it.state
+                    i = it.index
+                    counter = it.counter
                 }
                 41//for phone numbers; same as 12 + space; coming from 27
-                -> when {
-                    Util.isNumber(c) -> {
-                        map.append(c)
-                    }
-                    c.toInt() == CH_SPACE -> state = 41
-                    else -> {
-                        i = if (i - 1 > 0 && str[i - 1].toInt() == CH_SPACE)
-                            i - 2
-                        else
-                            i - 1
-                        state = -1
-                    }
+                -> state41(getStateContext()).let {
+                    state = it.state
+                    i = it.index
+                    counter = it.counter
                 }
                 42 //18=12 case, where 7-2209 was becoming amt as part of phn support
-                -> if (Util.isNumber(c)) {
-                    map.append(c)
-                } else if (c.toInt() == CH_HYPH && i + 1 < str.length && Util.isNumber(str[i + 1])) {
-                    state = 39
-                } else {
-                    i -= 1
-                    state = -1
+                -> state42(getStateContext()).let {
+                    state = it.state
+                    i = it.index
+                    counter = it.counter
                 }
                 43 //1234567890@ybl
-                -> if (Util.isLowerAlpha(c) || Util.isNumber(c)) {
-                    map.setType(TY_VPD, TY_VPD)
-                    map.append(delimiterStack.pop())
-                    map.append(c)
-                    state = 44
-                } else {
-                    state = -1
+                -> state43(getStateContext()).let {
+                    state = it.state
+                    i = it.index
+                    counter = it.counter
                 }
-                44 -> if (Util.isLowerAlpha(c) || Util.isNumber(c) || c.toInt() == CH_FSTP) {
-                    map.append(c)
-                    state = 44
-                } else
-                    state = -1
-                45 -> if (Util.isNumber(c)) {
-                    map.append(c)
-                } else if (c.toInt() == CH_HYPH && i + 1 < str.length && Util.isNumber(str[i + 1])) {
-                    state = 39
-                } else {
-                    i -= if (i - 1 > 0 && str[i - 1].toInt() == CH_COMA)
-                        2
-                    else
-                        1
-                    state = -1
+                44 -> state44(getStateContext()).let {
+                    state = it.state
+                    i = it.index
+                    counter = it.counter
+                }
+                45 -> state45(getStateContext()).let {
+                    state = it.state
+                    i = it.index
+                    counter = it.counter
                 }
             }
             i++
@@ -970,11 +500,6 @@ object Kyuga {
         return Pair(i, map)
     }
 
-    private fun checkMonthType(
-        str: String,
-        i: Int
-    ) = Util.checkTypes(root, "FSA_MONTHS", str.substring(i))
-
     private fun skipForTZ(str: String, map: FsaContextMap): Int {
         var state = 1
         var i = 0
@@ -1037,71 +562,6 @@ object Kyuga {
         return i
     }
 
-    private fun nextSpace(str: String): Int {
-        var i = 0
-        while (i < str.length) {
-            if (str[i] == ' ')
-                return i
-            else
-                i++
-        }
-        return i
-    }
-
-    private fun accAmtNumPct(str: String, i: Int, map: FsaContextMap, config: Map<String, String>): Int {
-        //acc num amt pct
-        val c = str[i]
-        val subStr = str.substring(i)
-
-        val pFSAAmt = Util.checkTypes(root, "FSA_AMT", subStr)
-        val pFSATimes = Util.checkTypes(root, "FSA_TIMES", subStr)
-
-        if (c.toInt() == CH_FSTP) { //dot
-            if (i == 0 && config.containsKey(YUGA_SOURCE_CONTEXT) && config[YUGA_SOURCE_CONTEXT] == YUGA_SC_CURR)
-                map.setType(TY_AMT, TY_AMT)
-            map.append(c)
-            return 10
-        } else if (c.toInt() == 42 || c.toInt() == 88 || c.toInt() == 120) {//*Xx
-            map.setType(TY_ACC, TY_ACC)
-            map.append('X')
-            return 11
-        } else if (c.toInt() == CH_COMA) { //comma
-            return 12
-        } else if (c.toInt() == CH_PCT || c.toInt() == CH_SPACE && i + 1 < str.length && str[i + 1].toInt() == CH_PCT) { //pct
-            map.setType(TY_PCT, TY_PCT)
-            return -1
-        } else if (c.toInt() == CH_PLUS) {
-            if (config.containsKey(YUGA_SOURCE_CONTEXT) && config[YUGA_SOURCE_CONTEXT] == YUGA_SC_CURR) {
-                return -1
-            }
-            map.setType(TY_STR, TY_STR)
-            return 36
-        } else if (i > 0 && pFSAAmt != null) {
-            map.index = pFSAAmt.first
-            map.setType(TY_AMT, TY_AMT)
-            map.append(getAmt(pFSAAmt.second))
-            return 38
-        } else if (i > 0 && pFSATimes != null) {
-            val ind = i + pFSATimes.first
-            map.index = ind
-            map.setType(TY_TME, null)
-            var s = str.substring(0, i)
-            if (pFSATimes.second == "mins")
-                s = "00$s"
-            extractTime(s, map.getValMap())
-            return 38
-        } else
-            return -1
-    }
-
-    private fun getAmt(type: String): String {
-        when (type) {
-            "lakh", "lac" -> return "00000"
-            "k" -> return "000"
-            else -> return ""
-        }
-    }
-
     private fun extractTime(str: String, valMap: MutableMap<String, String>, vararg prefix: String) {
         var pre = ""
         if (prefix.isNotEmpty())
@@ -1114,19 +574,6 @@ object Kyuga {
             valMap[pre + "time"] =
                 gps[1]?.value.toString() + if (it.groups.size > 1 && gps[2] != null) ":" + gps[2]?.value.toString() else ":00"
         }
-    }
-
-    private fun lookAheadForInstr(str: String, index: Int): Int {
-        var c: Char
-        for (i in index until str.length) {
-            c = str[i]
-            if (c.toInt() == CH_FSTP) {
-            } else return if (c.toInt() == 42 || c.toInt() == 88 || c.toInt() == 120 || Util.isNumber(c))
-                i
-            else
-                -1
-        }
-        return -1
     }
 
     internal class DelimiterStack {
