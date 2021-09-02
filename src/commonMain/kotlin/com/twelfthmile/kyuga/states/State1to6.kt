@@ -6,6 +6,9 @@ import com.twelfthmile.kyuga.model.StateResult
 import com.twelfthmile.kyuga.utils.*
 import com.twelfthmile.kyuga.utils.accAmtNumPct
 
+internal fun state0(context: StateContext): StateResult {
+    return StateResult(0, context.index, context.counter)
+}
 internal fun state1(
    context: StateContext
 ): StateResult? {
@@ -50,7 +53,7 @@ internal fun state1(
             }
         }
     }
-    return StateResult(i, state, context.counter)
+    return StateResult(state, i, context.counter)
 }
 
 internal fun state2(
@@ -83,7 +86,7 @@ internal fun state2(
                 i -= 1
         }
     }
-    return StateResult(i, state, context.counter)
+    return StateResult(state, i, context.counter)
 }
 
 internal fun state3(
@@ -122,7 +125,7 @@ internal fun state3(
                 i -= 1
         }
     }
-    return StateResult(i, state, context.counter)
+    return StateResult(state, i, context.counter)
 }
 
 internal fun state4(
@@ -141,7 +144,7 @@ internal fun state4(
             state = -1
         }
     }
-    return StateResult(i, state, context.counter)
+    return StateResult(state, i, context.counter)
 }
 
 internal fun state5(
@@ -170,7 +173,7 @@ internal fun state5(
         } else
             state = 7
     }
-    return StateResult(i, state, context.counter)
+    return StateResult(state, i, context.counter)
 }
 
 internal fun state6(
@@ -188,5 +191,5 @@ internal fun state6(
         } else
             state = -1
     }
-    return StateResult(i, state, context.counter)
+    return StateResult(state, i, context.counter)
 }

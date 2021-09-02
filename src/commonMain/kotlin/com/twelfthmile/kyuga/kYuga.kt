@@ -6,6 +6,7 @@ import com.twelfthmile.kyuga.expectations.log
 import com.twelfthmile.kyuga.regex.EMAIL_ADDRESS
 import com.twelfthmile.kyuga.states.*
 import com.twelfthmile.kyuga.model.StateContext
+import com.twelfthmile.kyuga.model.StateResult
 import com.twelfthmile.kyuga.types.*
 import com.twelfthmile.kyuga.utils.*
 
@@ -164,11 +165,6 @@ object Kyuga {
         return config
     }
 
-    fun checkTypes(type: String, word: String): Pair<Int, String>? {
-        return Util.checkTypes(root, type, word)
-    }
-
-
     private fun parseInternal(inputStr: String, config: Map<String, String>): Pair<Int, FsaContextMap>? {
         var str = inputStr
         var state = 1
@@ -181,230 +177,67 @@ object Kyuga {
         while (state > 0 && i < str.length) {
             c = str[i]
             fun getStateContext() = StateContext(root, str, c, map, i, delimiterStack, config, counter)
-            when (state) {
-                1 -> state1(getStateContext())?.let {
-                    state = it.state
-                    i = it.index
-                } ?: return null
-
-                2 -> state2(getStateContext()).let {
-                    state = it.state
-                    i = it.index
-                }
-                3 -> state3(getStateContext()).let {
-                    state = it.state
-                    i = it.index
-                }
+            val fsaLogicByState: ((context: StateContext) -> StateResult?) = when (state) {
+                1 -> ::state1
+                2 -> ::state2
+                3 -> ::state3
                 4 //hours to mins
-                -> state4(getStateContext()).let {
-                    state = it.state
-                    i = it.index
-                }
-                5 -> state5(getStateContext()).let {
-                    state = it.state
-                    i = it.index
-                }
+                -> ::state4
+                5 -> ::state5
                 6 //for seconds
-                -> state6(getStateContext()).let {
-                    state = it.state
-                    i = it.index
-                }
-                7 -> state7(getStateContext()).let {
-                    state = it.second
-                    i = it.first
-                }
-                8 -> state8(getStateContext()).let {
-                    state = it.second
-                    i = it.first
-                }
-                9 -> state9(getStateContext()).let {
-                    state = it.state
-                    i = it.index
-                    counter = it.counter
-                }//handle for num case
-                10 -> state10(getStateContext()).let {
-                    state = it.state
-                    i = it.index
-                    counter = it.counter
-                }
-                11 -> state11(getStateContext()).let {
-                    state = it.state
-                    i = it.index
-                    counter = it.counter
-                }
-                12 -> state12(getStateContext()).let {
-                    state = it.state
-                    i = it.index
-                    counter = it.counter
-                }
-                13 -> state13(getStateContext()).let {
-                    state = it.state
-                    i = it.index
-                    counter = it.counter
-                }
-                14 -> state14(getStateContext()).let {
-                    state = it.state
-                    i = it.index
-                    counter = it.counter
-                }
-                15 -> state15(getStateContext()).let {
-                    state = it.state
-                    i = it.index
-                    counter = it.counter
-                }
-                16 -> state16(getStateContext()).let {
-                    state = it.state
-                    i = it.index
-                    counter = it.counter
-                }//we should handle amt case, where comma led to 16 as opposed to 12
-                17 -> state17(getStateContext()).let {
-                    state = it.state
-                    i = it.index
-                    counter = it.counter
-                }//we should handle amt case, where comma led to 16,17 as opposed to 12
-                18 -> state18(getStateContext()).let {
-                    state = it.state
-                    i = it.index
-                    counter = it.counter
-                }//we should handle amt case, where comma led to 16,17 as opposed to 12
+                -> ::state6
+                7 -> ::state7
+                8 -> ::state8
+                9 -> ::state9//handle for num case
+                10 -> ::state10
+                11 -> ::state11
+                12 -> ::state12
+                13 -> ::state13
+                14 -> ::state14
+                15 -> ::state15
+                16 -> ::state16//we should handle amt case, where comma led to 16 as opposed to 12
+                17 -> ::state17//we should handle amt case, where comma led to 16,17 as opposed to 12
+                18 -> ::state18//we should handle amt case, where comma led to 16,17 as opposed to 12
                 19 //year
-                -> state19(getStateContext()).let {
-                    state = it.state
-                    i = it.index
-                    counter = it.counter
-                }
+                -> ::state19
                 20 //year++
-                -> state20(getStateContext()).let {
-                    state = it.state
-                    i = it.index
-                    counter = it.counter
-                }
-                21 -> state21(getStateContext()).let {
-                    state = it.state
-                    i = it.index
-                    counter = it.counter
-                }
-                22 -> state22(getStateContext()).let {
-                    state = it.state
-                    i = it.index
-                    counter = it.counter
-                }
-                24 -> state24(getStateContext()).let {
-                    state = it.state
-                    i = it.index
-                    counter = it.counter
-                }
+                -> ::state20
+                21 -> ::state21
+                22 -> ::state22
+                24 -> ::state24
                 25//potential year start comes here
-                -> state25(getStateContext()).let {
-                    state = it.state
-                    i = it.index
-                    counter = it.counter
-                }
-                26 -> state26(getStateContext()).let {
-                    state = it.state
-                    i = it.index
-                    counter = it.counter
-                }
-                27 -> state27(getStateContext()).let {
-                    state = it.state
-                    i = it.index
-                    counter = it.counter
-                }
-                28 -> state28(getStateContext()).let {
-                    state = it.state
-                    i = it.index
-                    counter = it.counter
-                }
-                29 -> state29(getStateContext()).let {
-                    state = it.state
-                    i = it.index
-                    counter = it.counter
-                }
-                30 -> state30(getStateContext()).let {
-                    state = it.state
-                    i = it.index
-                    counter = it.counter
-                }
-                31 -> state31(getStateContext()).let {
-                    state = it.state
-                    i = it.index
-                    counter = it.counter
-                }
-                32 -> state32(getStateContext()).let {
-                    state = it.state
-                    i = it.index
-                    counter = it.counter
-                }
-                33 -> state33(getStateContext()).let {
-                    state = it.state
-                    i = it.index
-                    counter = it.counter
-                }
-                34 -> state34(getStateContext()).let {
-                    state = it.state
-                    i = it.index
-                    counter = it.counter
-                }
-                35 -> state35(getStateContext()).let {
-                    state = it.state
-                    i = it.index
-                    counter = it.counter
-                }
-                36 -> state36(getStateContext())?.let {
-                    state = it.state
-                    i = it.index
-                    counter = it.counter
-                } ?: return null
-                37 -> state37(getStateContext()).let {
-                    state = it.state
-                    i = it.index
-                    counter = it.counter
-                }
-                38 -> state38(getStateContext()).let {
-                    state = it.state
-                    i = it.index
-                    counter = it.counter
-                }
+                -> ::state25
+                26 -> ::state26
+                27 -> ::state27
+                28 -> ::state28
+                29 -> ::state29
+                30 -> ::state30
+                31 -> ::state31
+                32 -> ::state32
+                33 -> ::state33
+                34 -> ::state34
+                35 -> ::state35
+                36 -> ::state36
+                37 -> ::state37
+                38 -> ::state38
                 39//instrno
-                -> state39(getStateContext()).let {
-                    state = it.state
-                    i = it.index
-                    counter = it.counter
-                }
-                40 -> state40(getStateContext()).let {
-                    state = it.state
-                    i = it.index
-                    counter = it.counter
-                }
+                -> ::state39
+                40 -> ::state40
                 41//for phone numbers; same as 12 + space; coming from 27
-                -> state41(getStateContext()).let {
-                    state = it.state
-                    i = it.index
-                    counter = it.counter
-                }
+                -> ::state41
                 42 //18=12 case, where 7-2209 was becoming amt as part of phn support
-                -> state42(getStateContext()).let {
-                    state = it.state
-                    i = it.index
-                    counter = it.counter
-                }
+                -> ::state42
                 43 //1234567890@ybl
-                -> state43(getStateContext()).let {
-                    state = it.state
-                    i = it.index
-                    counter = it.counter
-                }
-                44 -> state44(getStateContext()).let {
-                    state = it.state
-                    i = it.index
-                    counter = it.counter
-                }
-                45 -> state45(getStateContext()).let {
-                    state = it.state
-                    i = it.index
-                    counter = it.counter
-                }
+                -> ::state43
+                44 -> ::state44
+                45 -> ::state45
+                else -> ::state0
             }
+            fsaLogicByState(getStateContext())?.let {
+                state = it.state
+                i = it.index
+                counter = it.counter
+            } ?: return null
             i++
             if (D_DEBUG) {
                 log("ch:" + c + " state:" + state + " map:" + map.print())

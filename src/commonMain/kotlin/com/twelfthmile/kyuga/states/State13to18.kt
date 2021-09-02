@@ -1,6 +1,5 @@
 package com.twelfthmile.kyuga.states
 
-import com.twelfthmile.kyuga.Kyuga
 import com.twelfthmile.kyuga.model.StateContext
 import com.twelfthmile.kyuga.model.StateResult
 import com.twelfthmile.kyuga.utils.*

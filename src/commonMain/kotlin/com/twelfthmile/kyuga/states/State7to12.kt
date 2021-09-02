@@ -6,7 +6,7 @@ import com.twelfthmile.kyuga.utils.*
 
 internal fun state7(
     context: StateContext
-): Pair<Int, Int> {
+): StateResult {
     var i = context.index
     val state: Int
     with(context) {
@@ -29,12 +29,12 @@ internal fun state7(
             i -= 2
         state = -1
     }
-    return Pair(i, state)
+    return StateResult(state, i, context.counter)
 }
 
 internal fun state8(
     context: StateContext
-): Pair<Int, Int> {
+):StateResult {
     var state: Int
     var i = context.index
     with(context) {
@@ -51,7 +51,7 @@ internal fun state8(
                 i -= 1
         }
     }
-    return Pair(i, state)
+    return StateResult(state, i, context.counter)
 }
 
 internal fun state9(
