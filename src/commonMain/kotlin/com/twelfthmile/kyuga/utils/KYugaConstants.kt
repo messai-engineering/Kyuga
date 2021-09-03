@@ -31,14 +31,16 @@ const val TY_OTP = "OTP"
 const val TY_VPD = "VPD" //VPA-ID
 //public static final String TY_DCT = "DCT"; //date context like sunday,today,tomorrow
 
-const val FSA_MONTHS = "jan;uary,feb;ruary,mar;ch,apr;il,may,jun;e,jul;y,aug;ust,sep;t;ember,oct;ober,nov;ember,dec;ember"
-const val FSA_DAYS = "sun;day,mon;day,tue;sday,wed;nesday,thu;rsday,thur;sday,fri;day,sat;urday"
-const val FSA_TIMEPRFX = "at,on,before,by"
-const val FSA_AMT = "lac,lakh,k"
-const val FSA_TIMES = "hours,hrs,hr,mins,minutes"
-const val FSA_TZ = "gmt,ist"
-const val FSA_DAYSFFX = "st,nd,rd,th"
-const val FSA_UPI = "UPI,MMT,NEFT"
+val FSA_TYPES = listOf(
+    Pair("FSA_MONTHS", "jan;uary,feb;ruary,mar;ch,apr;il,may,jun;e,jul;y,aug;ust,sep;t;ember,oct;ober,nov;ember,dec;ember"),
+    Pair("FSA_DAYS", "sun;day,mon;day,tue;sday,wed;nesday,thu;rsday,thur;sday,fri;day,sat;urday"),
+    Pair("FSA_TIMEPRFX", "at,on,before,by"),
+    Pair("FSA_AMT", "lac,lakh,k"),
+    Pair("FSA_TIMES", "hours,hrs,hr,mins,minutes"),
+    Pair("FSA_TZ", "gmt,ist"),
+    Pair("FSA_DAYSFFX", "st,nd,rd,th"),
+    Pair("FSA_UPI", "UPI,MMT,NEFT")
+)
 
 const val CH_SPACE = 32
 const val CH_PCT = 37

@@ -17,7 +17,7 @@ class YugaTest {
     fun `on tokenize - valid sms - should tokenize`() {
         val validSms = "INR 7,980.00 Dr to A/c No XX2471 towards SI HDFC177126215 BSES Rajdhani -02/10/17 Val 03-OCT-17. Clr Bal INR 8,822.69."
         val candidateTokens = validSms.split(" ").map { it.trim() }
-        val tokens = Kyuga.tokenise(candidateTokens)
+        val tokens = Kyuga.tokenize(candidateTokens)
 
         assertEquals("[INR, AMT, Dr, to, A/c, No, INSTRNO, towards, SI, IDVAL, BSES, Rajdhani, AMT, Val, DATE, Clr, Bal, INR, AMT]", tokens.toString())
     }
@@ -26,7 +26,7 @@ class YugaTest {
     fun `on tokenize - valid offer- should tokenize`() {
         val sms = "55865 is your One Time Password. This OTP is valid for 10 minutes only. OTP generated on: 09-04-2017 22:55:4"
         val candidateTokens = sms.split(" ").map { it.trim() }
-        val tokens = Kyuga.tokenise(candidateTokens)
+        val tokens = Kyuga.tokenize(candidateTokens)
         println(tokens)
     }
 

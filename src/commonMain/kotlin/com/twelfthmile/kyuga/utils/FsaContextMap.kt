@@ -1,11 +1,9 @@
 package com.twelfthmile.kyuga.utils
 
 import com.twelfthmile.kyuga.expectations.*
-import com.twelfthmile.kyuga.utils.*
 
 class FsaContextMap {
 
-    //todo change to private
     private var map: MutableMap<String, String> = mutableMapOf()
     private val valMap = mutableMapOf<String, String>()
     private var prevKey: String? = null
@@ -39,13 +37,6 @@ class FsaContextMap {
         prevKey = key
     }
 
-    fun put(key: String, value: Int) {
-        if (!keys.contains(key))
-            keys.add(key)
-        map[key] = value.toString()
-        prevKey = key
-    }
-
     fun put(key: String?, value: String) {
         if (!keys.contains(key))
             keys.add(key)
@@ -57,10 +48,6 @@ class FsaContextMap {
         map[TY_TYP] = type
         if (convertType != null)
             convert(convertType)
-    }
-
-    fun getVal(name: String): String? {
-        return valMap[name]
     }
 
     fun setVal(name: String, `val`: String) {
@@ -149,7 +136,8 @@ class FsaContextMap {
     }
 
     fun putAll(fsaContextMap: FsaContextMap) {
-//        map.putAll(fsaContextMap.map)
+        // Put all had a bug in kotlin multi-platform
+        // map.putAll(fsaContextMap.map)
         fsaContextMap.map.forEach {
            map[it.key] = it.value
         }
@@ -239,10 +227,7 @@ class FsaContextMap {
             if (invalidDateContributors.size > 0) {
                 return if (invalidDateContributors.size == 1 && invalidDateContributors[0] == DT_MM && ifDay && ifYear) {
                     val format = DT_D + "/" + DT_MM + "/" + if (map.containsKey(DT_YY)) DT_YY else DT_YYYY
-                    val value = map[DT_MM] + "/" + map[DT_D] + "/" + if (map.containsKey(
-                            DT_YY
-                        )
-                    ) map[DT_YY] else map[DT_YYYY]
+                    val value = map[DT_MM] + "/" + map[DT_D] + "/" + if (map.containsKey(DT_YY)) map[DT_YY] else map[DT_YYYY]
                     formatDateByFormat(value, format)
                 } else
                     null
