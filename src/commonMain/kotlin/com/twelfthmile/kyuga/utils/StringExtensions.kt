@@ -2,6 +2,8 @@ package com.twelfthmile.kyuga.utils
 
 import com.twelfthmile.kyuga.types.RootTrie
 
+private val EXTRACT_TIME_REGEX = "([0-9]{2})([0-9]{2})?([0-9]{2})?".toRegex()
+
 internal fun String.accAmtNumPct(
         rootTrie: RootTrie,
         i: Int,
@@ -65,8 +67,7 @@ internal fun String.extractTime(valMap: MutableMap<String, String>, vararg prefi
     var pre = ""
     if (prefix.isNotEmpty())
         pre = prefix[0] + "_"
-    val pattern = "([0-9]{2})([0-9]{2})?([0-9]{2})?".toRegex()
-    val m = pattern.find(this)
+    val m = EXTRACT_TIME_REGEX.find(this)
 
     m?.let {
         val gps = it.groups

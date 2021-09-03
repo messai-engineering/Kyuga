@@ -11,14 +11,13 @@ buildscript {
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
         classpath "org.jetbrains.kotlin:kotlin-allopen:$kotlin_version"
         classpath group: 'net.rubygrapefruit', name: 'native-platform', version: '0.21'
+        classpath 'com.codingfeline.buildkonfig:buildkonfig-gradle-plugin:0.9.0'
     }
 }
 
-plugins {
-    id 'org.jetbrains.kotlin.multiplatform' version '1.3.41'
-}
-
 apply plugin: 'maven-publish'
+apply plugin: 'org.jetbrains.kotlin.multiplatform'
+apply plugin: 'com.codingfeline.buildkonfig'
 
 repositories {
     mavenCentral()
@@ -113,6 +112,16 @@ task fatFramework(type: FatFrameworkTask) {
             kotlin.targets.iosArm64.binaries.getFramework("RELEASE"),
             kotlin.targets.iosArm32.binaries.getFramework("RELEASE")
     )
+}
+
+buildkonfig {
+    packageName = 'com.example.app'
+    // objectName = 'YourAwesomeConfig'
+    // exposeObjectWithName = 'YourAwesomePublicConfig'
+
+    defaultConfigs {
+        buildConfigField 'STRING', 'isDebug', 'true'
+    }
 }
 
 apply from: rootProject.file('pom.gradle')

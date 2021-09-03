@@ -1,5 +1,6 @@
 package com.twelfthmile.kyuga
 
+import com.example.app.BuildKonfig
 import com.twelfthmile.kyuga.expectations.MultDate
 import com.twelfthmile.kyuga.expectations.formatDateDefault
 import com.twelfthmile.kyuga.expectations.log
@@ -15,21 +16,12 @@ private val TOKENIZE_REGEX = "[. ]".toRegex()
 
 object Kyuga {
 
-    private val D_DEBUG = true
-
+    private val isDebug = BuildKonfig.isDebug.toBoolean()
     private val root: RootTrie
         get() = LazyHolder.root
 
     private object LazyHolder {
         var root = KyugaTrie().root
-    }
-
-    fun tokenise(message: List<String>): List<String> = message.map {
-        val parseResponse = parse(it)
-        parseResponse?.type ?: when (Util.checkForId(it)) {
-            true -> if (it != "EMAILADDR") "IDVAL" else it
-            false -> it
-        }
     }
 
     fun tokenize(message: String): String {
@@ -39,7 +31,7 @@ object Kyuga {
             .split(TOKENIZE_REGEX)
             .map { it.trim() }
         return try {
-            val tokens = tokenise(candidateTokens).filter { it.isNotBlank() }
+            val tokens = tokenize(candidateTokens).filter { it.isNotBlank() }
             tokens.filterIndexed { index, it ->
                 if (it.isNotEmpty()) {
                     if (index > 0)
@@ -54,6 +46,14 @@ object Kyuga {
         }.joinToString(" ")
     }
 
+    fun tokenize(message: List<String>): List<String> = message.map {
+        val parseResponse = parse(it)
+        parseResponse?.type ?: when (Util.checkForId(it)) {
+            true -> if (it != "EMAILADDR") "IDVAL" else it
+            false -> it
+        }
+    }
+
     /**
      * Returns Pair of index upto which date was read and the date object
      *
@@ -64,12 +64,6 @@ object Kyuga {
     fun parseDate(str: String): Pair<Int, MultDate>? {
         val configMap = generateDefaultConfig()
         return getIntegerDatePair(str, configMap)
-    }
-
-    private fun getIntegerDatePair(str: String, configMap: Map<String, String>): Pair<Int, MultDate>? {
-        val (a, b) = parseInternal(str, configMap) ?: return null
-        val d = b.getDate(configMap) ?: return null
-        return Pair(a, d)
     }
 
     /**
@@ -95,6 +89,12 @@ object Kyuga {
 
     fun parse(str: String, config: Map<String, String>): Response? {
         return getResponse(str, config)
+    }
+
+    private fun getIntegerDatePair(str: String, configMap: Map<String, String>): Pair<Int, MultDate>? {
+        val (a, b) = parseInternal(str, configMap) ?: return null
+        val d = b.getDate(configMap) ?: return null
+        return Pair(a, d)
     }
 
     private fun getResponse(str: String, config: Map<String, String>): Response? {
@@ -239,7 +239,7 @@ object Kyuga {
                 counter = it.counter
             } ?: return null
             i++
-            if (D_DEBUG) {
+            if (isDebug) {
                 log("ch:" + c + " state:" + state + " map:" + map.print())
             }
         }
@@ -326,8 +326,8 @@ object Kyuga {
         } else if (map.type == TY_TMS) {
             val v = map[map.type!!]
             if (v != null && v.length == 8 && Util.isHour(v[0], v[1]) && Util.isHour(v[4], v[5])) {
-                extractTime(v.substring(0, 4), map.getValMap(), "dept")
-                extractTime(v.substring(4, 8), map.getValMap(), "arrv")
+                v.substring(0, 4).extractTime(map.getValMap(), "dept")
+                v.substring(4, 8).extractTime(map.getValMap(), "arrv")
             }
         }
         return Pair(i, map)
@@ -346,11 +346,11 @@ object Kyuga {
                     state = 2
                 else {
                     val s_ = str.substring(0, i).trim { it <= ' ' }
-                    if (s_.length == 4 && Util.isNumber(s_)) {//we captured a year after IST Mon Sep 04 13:47:13 IST 2017
+                    state = if (s_.length == 4 && Util.isNumber(s_)) {//we captured a year after IST Mon Sep 04 13:47:13 IST 2017
                         map.put(DT_YYYY, s_)
-                        state = -2
+                        -2
                     } else
-                        state = -1
+                        -1
                 }
                 2 ->
                     //todo re-adjust GMT time, current default +5:30 for IST
@@ -393,20 +393,6 @@ object Kyuga {
                 break
         }
         return i
-    }
-
-    private fun extractTime(str: String, valMap: MutableMap<String, String>, vararg prefix: String) {
-        var pre = ""
-        if (prefix.isNotEmpty())
-            pre = prefix[0] + "_"
-        val pattern = "([0-9]{2})([0-9]{2})?([0-9]{2})?".toRegex()
-        val m = pattern.find(str)
-
-        m?.let {
-            val gps = it.groups
-            valMap[pre + "time"] =
-                gps[1]?.value.toString() + if (it.groups.size > 1 && gps[2] != null) ":" + gps[2]?.value.toString() else ":00"
-        }
     }
 
     internal class DelimiterStack {
